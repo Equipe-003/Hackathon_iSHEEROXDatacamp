@@ -117,7 +117,7 @@ Attribuer le rôle **BigQuery User** au compte de service créé.
 **Étape 4 — Télécharger la clé JSON**
 
 Cliquer sur le service account → onglet **"Clés"** → **"Ajouter une clé"** → **"JSON"**.  
-Le fichier se télécharge automatiquement.
+Le fichier se télécharge automatiquement. Renommer le fichier en **"credentials.json"**
 
 **Étape 5 — Placer le fichier dans le repo**
 
