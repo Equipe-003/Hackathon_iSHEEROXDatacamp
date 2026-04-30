@@ -1,5 +1,8 @@
 # Data enginering
-pandas==2.3.3
-google-cloud-bigquery==3.41.0
-google-auth==2.49.2
-db-dtypes==1.5.1
+db-dtypes>=1.4.4,
+google-auth>=2.49.2
+google-cloud-bigquery>=3.41.0
+google-cloud-bigquery-storage>=2.37.0
+pandas>=3.0.2
+pip>=26.1
+pyarrow>=24.0.0
