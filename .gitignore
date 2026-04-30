@@ -1,0 +1,66 @@
+# ===== ENVIRONNEMENT VIRTUEL =====
+env/
+venv/
+ENV/
+.venv/
+virtualenv/
+.env
+.env.local
+.env.*.local
+
+# ===== CREDENTIALS ET DONNÉES SENSIBLES =====
+credentials/
+credentials.json
+*.key
+*.pem
+secrets/
+.secrets/
+
+# ===== CACHE PYTHON =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ===== JUPYTER NOTEBOOKS =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== IDE ET EDITEURS =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ===== DONNÉES ET FICHIERS TEMPORAIRES =====
+*.tmp
+*.bak
+*.xlsx
+*.xls
+
+# ===== FICHIERS GÉNÉRÉS =====
+*.log
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ===== DOSSIERS SPÉCIFIQUES AU PROJET =====
+dashboard/output/
+dashboard/cache/
+models/checkpoints/
+*.pkl
+*.joblib
