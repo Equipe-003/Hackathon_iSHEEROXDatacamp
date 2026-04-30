@@ -21,7 +21,7 @@ Ce projet est réalisé dans le cadre du **Hackathon iSHEERO × DataCamp Donates
 
 **Source de données :** [GDELT](https://www.gdeltproject.org/) (Global Database of Events, Language and Tone) — une base publique qui surveille en temps réel les médias du monde entier dans plus de 100 langues, disponible sur Google BigQuery.
 
-**Période analysée :** `20250501` → `20260420`  
+**Période analysée :** `20250101` → `20251231`  
 **Filtre géographique :** `ActionGeo_CountryCode = 'BN'` (Bénin, code FIPS)
 
 ---
