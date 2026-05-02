@@ -16,6 +16,11 @@
 ---
 
 ## Acteurs (Actor1 & Actor2)
+La différence entre Actor1 et Actor2 :
+- Actor1 est celui qui initie l'action — l'auteur
+- Actor2 est celui qui reçoit l'action — la cible
+
+Le code caméo est un dictionnaire universel qui traduit les informations en codes numériques structurés.
 
 | Colonne | Type | Description | Utilité |
 |---------|------|-------------|---------|
