@@ -9,6 +9,7 @@
 - [Structure du projet](#structure-du-projet)
 - [Installation](#installation)
 - [Extraction des données](#extraction-des-données)
+- [Néttoyage et exploration des données](#Néttoyage et exploration des données)
 
 
 ---
@@ -176,8 +177,10 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 | **Complexité** | Moyenne | Faible |
 | **Recommandé pour** | Automatisation, CI/CD | Reproduction rapide, jury |
 
->  **Pour le jury :** l'Option B (ADC) est la plus rapide. Une seule commande suffit pour s'authentifier, aucun fichier à déplacer.
+
 
 ---
+
+## Néttoyage et exploration des données
 
 
