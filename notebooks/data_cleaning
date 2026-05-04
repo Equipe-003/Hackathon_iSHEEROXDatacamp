@@ -1,0 +1,669 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "bba1709f",
+   "metadata": {},
+   "source": [
+    "## Analyse Exploratoire (EDA) des données\n",
+    "\n",
+    "L'EDA a pour but connaître les données avant de faire quoi que ce soit de sophistiqué. L'objectif est de répondre à des questions simples mais fondamentales sur le dataset GDELT Bénin et d'en tiré les premières statistiques utiles."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2e09e3dc",
+   "metadata": {},
+   "source": [
+    "## 0. Imports"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "e2fda7a0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "from pathlib import Path"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2b55ea59",
+   "metadata": {},
+   "source": [
+    "## 1. Chargement des données\n",
+    "\n",
+    "> Le chemin est relatif à la racine du repo.  \n",
+    "> Si l'exécution est sur **Google Colab**, remplacez `DATA_PATH` par le chemin Google Drive."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "2c03619c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✅ Events dataset chargé : 27,317 lignes × 61 colonnes\n",
+      "✅ GKG dataset chargé : 24,453 lignes × 7 colonnes\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Adapter selon votre environnement\n",
+    "\n",
+    "# Option A : Local (VS Code, Jupyter classique)\n",
+    "EVENTS_DATA_PATH = Path('..') / 'data' / 'raw' / 'gdelt_bn_2025.csv'\n",
+    "GKG_DATA_PATH = Path('..') / 'data' / 'raw' / 'gdelt_gkg_bn_2025.csv'\n",
+    "# Option B : Google Colab (décommenter si nécessaire)\n",
+    "# from google.colab import drive\n",
+    "# drive.mount('/content/drive')\n",
+    "# EVENTS_DATA_PATH = '/content/drive/MyDrive/hackathon/gdelt_bn_2025.csv'\n",
+    "# GKG_DATA_PATH = '/content/drive/MyDrive/hackathon/gdelt_gkg_bn_2025.csv'\n",
+    "\n",
+    "events_df = pd.read_csv(EVENTS_DATA_PATH, low_memory=False)\n",
+    "gkg_df = pd.read_csv(GKG_DATA_PATH, low_memory=False)\n",
+    "\n",
+    "print(f'✅ Events dataset chargé : {events_df.shape[0]:,} lignes × {events_df.shape[1]} colonnes')\n",
+    "print(f'✅ GKG dataset chargé : {gkg_df.shape[0]:,} lignes × {gkg_df.shape[1]} colonnes')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2a39dce0",
+   "metadata": {},
+   "source": [
+    "## 2. Structure du dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "bcdc171b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "============================================================\n",
+      "APERÇU GÉNÉRAL Evénements\n",
+      "============================================================\n",
+      "Nombre d'événements  : 27,317\n",
+      "Nombre de colonnes   : 61\n",
+      "Période couverte     : 20250101 → 20251231\n",
+      "Mémoire utilisée     : 17.9 MB\n",
+      "\n",
+      "============================================================\n",
+      "APERÇU GÉNÉRAL GKG\n",
+      "============================================================\n",
+      "Nombre de documents  : 24,453\n",
+      "Nombre de colonnes   : 7\n",
+      "Période couverte     : 20250101003000 → 20251231201500\n",
+      "Mémoire utilisée     : 12.2 MB\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 2.1 Aperçu général \n",
+    "print('=' * 60)\n",
+    "print('APERÇU GÉNÉRAL Evénements')\n",
+    "print('=' * 60)\n",
+    "print(f\"Nombre d'événements  : {events_df.shape[0]:,}\")\n",
+    "print(f\"Nombre de colonnes   : {events_df.shape[1]}\")\n",
+    "print(f\"Période couverte     : {events_df['SQLDATE'].min()} → {events_df['SQLDATE'].max()}\")\n",
+    "print(f\"Mémoire utilisée     : {events_df.memory_usage(deep=True).sum() / 1e6:.1f} MB\")\n",
+    "\n",
+    "print('\\n' + '=' * 60)\n",
+    "print('APERÇU GÉNÉRAL GKG')\n",
+    "print('=' * 60)\n",
+    "print(f\"Nombre de documents  : {gkg_df.shape[0]:,}\")\n",
+    "print(f\"Nombre de colonnes   : {gkg_df.shape[1]}\")\n",
+    "print(f\"Période couverte     : {gkg_df['Date'].min()} → {gkg_df['Date'].max()}\")\n",
+    "print(f\"Mémoire utilisée     : {gkg_df.memory_usage(deep=True).sum() / 1e6:.1f} MB\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "3fd1a330",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "TYPES DE COLONNES Evénements\n",
+      "----------------------------------------\n",
+      "GLOBALEVENTID              int64\n",
+      "SQLDATE                    int64\n",
+      "MonthYear                  int64\n",
+      "Year                       int64\n",
+      "FractionDate             float64\n",
+      "Actor1Code                   str\n",
+      "Actor1Name                   str\n",
+      "Actor1CountryCode            str\n",
+      "Actor1KnownGroupCode         str\n",
+      "Actor1EthnicCode             str\n",
+      "Actor1Religion1Code          str\n",
+      "Actor1Religion2Code          str\n",
+      "Actor1Type1Code              str\n",
+      "Actor1Type2Code              str\n",
+      "Actor1Type3Code              str\n",
+      "Actor2Code                   str\n",
+      "Actor2Name                   str\n",
+      "Actor2CountryCode            str\n",
+      "Actor2KnownGroupCode         str\n",
+      "Actor2EthnicCode             str\n",
+      "Actor2Religion1Code          str\n",
+      "Actor2Religion2Code          str\n",
+      "Actor2Type1Code              str\n",
+      "Actor2Type2Code              str\n",
+      "Actor2Type3Code              str\n",
+      "IsRootEvent                int64\n",
+      "EventCode                  int64\n",
+      "EventBaseCode              int64\n",
+      "EventRootCode              int64\n",
+      "QuadClass                  int64\n",
+      "GoldsteinScale           float64\n",
+      "NumMentions                int64\n",
+      "NumSources                 int64\n",
+      "NumArticles                int64\n",
+      "AvgTone                  float64\n",
+      "Actor1Geo_Type             int64\n",
+      "Actor1Geo_FullName           str\n",
+      "Actor1Geo_CountryCode        str\n",
+      "Actor1Geo_ADM1Code           str\n",
+      "Actor1Geo_ADM2Code           str\n",
+      "Actor1Geo_Lat            float64\n",
+      "Actor1Geo_Long           float64\n",
+      "Actor1Geo_FeatureID          str\n",
+      "Actor2Geo_Type             int64\n",
+      "Actor2Geo_FullName           str\n",
+      "Actor2Geo_CountryCode        str\n",
+      "Actor2Geo_ADM1Code           str\n",
+      "Actor2Geo_ADM2Code           str\n",
+      "Actor2Geo_Lat            float64\n",
+      "Actor2Geo_Long           float64\n",
+      "Actor2Geo_FeatureID          str\n",
+      "ActionGeo_Type             int64\n",
+      "ActionGeo_FullName           str\n",
+      "ActionGeo_CountryCode        str\n",
+      "ActionGeo_ADM1Code           str\n",
+      "ActionGeo_ADM2Code           str\n",
+      "ActionGeo_Lat            float64\n",
+      "ActionGeo_Long           float64\n",
+      "ActionGeo_FeatureID          str\n",
+      "DATEADDED                  int64\n",
+      "SOURCEURL                    str\n",
+      "\n",
+      "----------------------------------------\n",
+      "TYPES DE COLONNES GKG\n",
+      "----------------------------------------\n",
+      "Date                int64\n",
+      "SourceCommonName      str\n",
+      "Persons               str\n",
+      "Organizations         str\n",
+      "Locations             str\n",
+      "Counts                str\n",
+      "TranslationInfo       str\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 2.2 Types de colonnes\n",
+    "print('\\nTYPES DE COLONNES Evénements')\n",
+    "print('-' * 40)\n",
+    "print(events_df.dtypes.to_string())\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "feb60d54",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "----------------------------------------\n",
+      "TYPES DE COLONNES GKG\n",
+      "----------------------------------------\n",
+      "Date                int64\n",
+      "SourceCommonName      str\n",
+      "Persons               str\n",
+      "Organizations         str\n",
+      "Locations             str\n",
+      "Counts                str\n",
+      "TranslationInfo       str\n"
+     ]
+    }
+   ],
+   "source": [
+    "print('\\n' + '-' * 40)\n",
+    "print('TYPES DE COLONNES GKG')\n",
+    "print('-' * 40)\n",
+    "print(gkg_df.dtypes.to_string())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "7c53546f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "COLONNES AVEC VALEURS MANQUANTES - ÉVÉNEMENTS\n",
+      "----------------------------------------\n",
+      "                       Valeurs manquantes  % manquant\n",
+      "Actor2Type3Code                     27310       100.0\n",
+      "Actor1Type3Code                     27299        99.9\n",
+      "Actor1Religion2Code                 27269        99.8\n",
+      "Actor2Religion2Code                 27275        99.8\n",
+      "Actor1EthnicCode                    27232        99.7\n",
+      "Actor2EthnicCode                    27230        99.7\n",
+      "Actor2Religion1Code                 27142        99.4\n",
+      "Actor1Religion1Code                 27145        99.4\n",
+      "Actor2KnownGroupCode                27048        99.0\n",
+      "Actor2Type2Code                     26852        98.3\n",
+      "Actor1KnownGroupCode                26822        98.2\n",
+      "Actor1Type2Code                     26519        97.1\n",
+      "Actor2Geo_ADM2Code                  24864        91.0\n",
+      "ActionGeo_ADM2Code                  24304        89.0\n",
+      "Actor1Geo_ADM2Code                  24302        89.0\n",
+      "Actor2Type1Code                     18641        68.2\n",
+      "Actor1Type1Code                     15394        56.4\n",
+      "Actor2CountryCode                   14306        52.4\n",
+      "Actor1CountryCode                   12190        44.6\n",
+      "Actor2Geo_FullName                   7177        26.3\n",
+      "Actor2Name                           7177        26.3\n",
+      "Actor2Code                           7177        26.3\n",
+      "Actor2Geo_FeatureID                  7177        26.3\n",
+      "Actor2Geo_Long                       7177        26.3\n",
+      "Actor2Geo_Lat                        7177        26.3\n",
+      "Actor2Geo_ADM1Code                   7177        26.3\n",
+      "Actor2Geo_CountryCode                7177        26.3\n",
+      "Actor1Geo_Long                       2253         8.2\n",
+      "Actor1Geo_FeatureID                  2253         8.2\n",
+      "Actor1Name                           2253         8.2\n",
+      "Actor1Geo_Lat                        2253         8.2\n",
+      "Actor1Geo_ADM1Code                   2253         8.2\n",
+      "Actor1Geo_CountryCode                2253         8.2\n",
+      "Actor1Geo_FullName                   2253         8.2\n",
+      "Actor1Code                           2253         8.2\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 2.3 Valeurs manquantes Evénements\n",
+    "missing = events_df.isnull().sum()\n",
+    "missing_pct = (missing / len(events_df) * 100).round(1)\n",
+    "\n",
+    "missing_df = pd.DataFrame({\n",
+    "    'Valeurs manquantes': missing,\n",
+    "    '% manquant': missing_pct\n",
+    "}).query('`Valeurs manquantes` > 0').sort_values('% manquant', ascending=False)\n",
+    "\n",
+    "print('\\nCOLONNES AVEC VALEURS MANQUANTES - ÉVÉNEMENTS')\n",
+    "print('-' * 40)\n",
+    "print(missing_df.to_string())\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "43e550c1",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "COLONNES AVEC VALEURS MANQUANTES - GKG\n",
+      "----------------------------------------\n",
+      "                 Valeurs manquantes  % manquant\n",
+      "TranslationInfo               20034        81.9\n",
+      "Counts                        18829        77.0\n",
+      "Persons                        3641        14.9\n",
+      "Organizations                  3173        13.0\n",
+      "Locations                        12         0.0\n"
+     ]
+    }
+   ],
+   "source": [
+    "## 2.3 Valeurs manquantes GKG\n",
+    "missing = gkg_df.isnull().sum()\n",
+    "missing_pct = (missing / len(gkg_df) * 100).round(1)\n",
+    "missing_df = pd.DataFrame({\n",
+    "    'Valeurs manquantes': missing,\n",
+    "    '% manquant': missing_pct\n",
+    "}).query('`Valeurs manquantes` > 0').sort_values('% manquant', ascending=False)\n",
+    "print('\\nCOLONNES AVEC VALEURS MANQUANTES - GKG')\n",
+    "print('-' * 40)\n",
+    "print(missing_df.to_string())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e87cb32f",
+   "metadata": {},
+   "source": [
+    "# **Nettoyage des données**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "03beeb2f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Colonnes supprimées (15): ['Actor1KnownGroupCode', 'Actor1EthnicCode', 'Actor1Religion1Code', 'Actor1Religion2Code', 'Actor1Type2Code', 'Actor1Type3Code', 'Actor2KnownGroupCode', 'Actor2EthnicCode', 'Actor2Religion1Code', 'Actor2Religion2Code', 'Actor2Type2Code', 'Actor2Type3Code', 'Actor1Geo_ADM2Code', 'Actor2Geo_ADM2Code', 'ActionGeo_ADM2Code']\n",
+      "Nouveau shape events_df: (27317, 46)\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Supprimer les colonnes d'events_df ayant > 80% de valeurs manquantes\n",
+    "thresh = 0.8\n",
+    "missing_pct_events = events_df.isnull().mean()\n",
+    "cols_to_drop = missing_pct_events[missing_pct_events > thresh].index.tolist()\n",
+    "\n",
+    "if not cols_to_drop:\n",
+    "    print(\"Aucune colonne à supprimer (aucune > 80% manquante).\")\n",
+    "else:\n",
+    "    print(f\"Colonnes supprimées ({len(cols_to_drop)}): {cols_to_drop}\")\n",
+    "    events_df_no_missing = events_df.drop(columns=cols_to_drop, inplace=False)\n",
+    "    print(f\"Nouveau shape events_df: {events_df_no_missing.shape}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "51cfd656",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Date</th>\n",
+       "      <th>SourceCommonName</th>\n",
+       "      <th>Persons</th>\n",
+       "      <th>Organizations</th>\n",
+       "      <th>Locations</th>\n",
+       "      <th>Counts</th>\n",
+       "      <th>TranslationInfo</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>20251012024500</td>\n",
+       "      <td>myjoyonline.com</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>ghana meteorological agency gmet</td>\n",
+       "      <td>1#Nigeria#NI#NI#10#8#NI;1#Benin#BN#BN#9.5#2.25#BN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>20251012030000</td>\n",
+       "      <td>thenationonlineng.net</td>\n",
+       "      <td>gloria bakare;ebonny musik</td>\n",
+       "      <td>starburg empowerment foundation;university of ...</td>\n",
+       "      <td>1#Benin#BN#BN#9.5#2.25#BN;1#Nigeria#NI#NI#10#8...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>20251012030000</td>\n",
+       "      <td>thenationonlineng.net</td>\n",
+       "      <td>gloria bakare;ebonny musik</td>\n",
+       "      <td>starburg empowerment foundation;university of ...</td>\n",
+       "      <td>1#Benin#BN#BN#9.5#2.25#BN;1#Nigeria#NI#NI#10#8...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>20251012190000</td>\n",
+       "      <td>jagran.com</td>\n",
+       "      <td>sivan a sun sharma;ashok mahato;gazipur a chau...</td>\n",
+       "      <td>visa the company a operations;visa;group the c...</td>\n",
+       "      <td>4#Patna, Bihar, India#IN#IN34#25.6#85.1167#-21...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>srclc:hin;eng:GT-HIN 1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>20251012220000</td>\n",
+       "      <td>thecable.ng</td>\n",
+       "      <td>frank azuekor;bayo onanuga;mike ozekhome;bola ...</td>\n",
+       "      <td>national open university;department of state s...</td>\n",
+       "      <td>1#Nigeria#NI#NI#10#8#NI;4#Ethiope, Delta, Nige...</td>\n",
+       "      <td>KIDNAP#4#police officers#1#Nigeria#NI#NI#10#8#...</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             Date       SourceCommonName  \\\n",
+       "0  20251012024500        myjoyonline.com   \n",
+       "1  20251012030000  thenationonlineng.net   \n",
+       "2  20251012030000  thenationonlineng.net   \n",
+       "3  20251012190000             jagran.com   \n",
+       "4  20251012220000            thecable.ng   \n",
+       "\n",
+       "                                             Persons  \\\n",
+       "0                                                NaN   \n",
+       "1                         gloria bakare;ebonny musik   \n",
+       "2                         gloria bakare;ebonny musik   \n",
+       "3  sivan a sun sharma;ashok mahato;gazipur a chau...   \n",
+       "4  frank azuekor;bayo onanuga;mike ozekhome;bola ...   \n",
+       "\n",
+       "                                       Organizations  \\\n",
+       "0                   ghana meteorological agency gmet   \n",
+       "1  starburg empowerment foundation;university of ...   \n",
+       "2  starburg empowerment foundation;university of ...   \n",
+       "3  visa the company a operations;visa;group the c...   \n",
+       "4  national open university;department of state s...   \n",
+       "\n",
+       "                                           Locations  \\\n",
+       "0  1#Nigeria#NI#NI#10#8#NI;1#Benin#BN#BN#9.5#2.25#BN   \n",
+       "1  1#Benin#BN#BN#9.5#2.25#BN;1#Nigeria#NI#NI#10#8...   \n",
+       "2  1#Benin#BN#BN#9.5#2.25#BN;1#Nigeria#NI#NI#10#8...   \n",
+       "3  4#Patna, Bihar, India#IN#IN34#25.6#85.1167#-21...   \n",
+       "4  1#Nigeria#NI#NI#10#8#NI;4#Ethiope, Delta, Nige...   \n",
+       "\n",
+       "                                              Counts           TranslationInfo  \n",
+       "0                                                NaN                       NaN  \n",
+       "1                                                NaN                       NaN  \n",
+       "2                                                NaN                       NaN  \n",
+       "3                                                NaN  srclc:hin;eng:GT-HIN 1.0  \n",
+       "4  KIDNAP#4#police officers#1#Nigeria#NI#NI#10#8#...                       NaN  "
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "gkg_df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "e1e1b4de",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "             TranslationInfo translation_source_langs\n",
+      "0                        NaN                      NaN\n",
+      "1                        NaN                      NaN\n",
+      "2                        NaN                      NaN\n",
+      "3   srclc:hin;eng:GT-HIN 1.0                      hin\n",
+      "4                        NaN                      NaN\n",
+      "5                        NaN                      NaN\n",
+      "6                        NaN                      NaN\n",
+      "7                        NaN                      NaN\n",
+      "8                        NaN                      NaN\n",
+      "9                        NaN                      NaN\n",
+      "10                       NaN                      NaN\n",
+      "11  srclc:spa;eng:GT-SPA 1.0                      spa\n",
+      "12                       NaN                      NaN\n",
+      "13  srclc:por;eng:GT-POR 1.0                      por\n",
+      "14  srclc:rus;eng:GT-RUS 1.0                      rus\n",
+      "15  srclc:fra;eng:GT-FRA 1.0                      fra\n",
+      "16  srclc:fra;eng:GT-FRA 1.0                      fra\n",
+      "17                       NaN                      NaN\n",
+      "18                       NaN                      NaN\n",
+      "19                       NaN                      NaN\n",
+      "20                       NaN                      NaN\n",
+      "21                       NaN                      NaN\n",
+      "22                       NaN                      NaN\n",
+      "23                       NaN                      NaN\n",
+      "24                       NaN                      NaN\n",
+      "25  srclc:fra;eng:GT-FRA 1.0                      fra\n",
+      "26  srclc:fra;eng:GT-FRA 1.0                      fra\n",
+      "27  srclc:fra;eng:GT-FRA 1.0                      fra\n",
+      "28  srclc:fra;eng:GT-FRA 1.0                      fra\n",
+      "29  srclc:spa;eng:GT-SPA 1.0                      spa\n"
+     ]
+    }
+   ],
+   "source": [
+    "import re\n",
+    "import sys\n",
+    "\n",
+    "\n",
+    "# Importer la fonction depuis scripts/data_pipeline.py\n",
+    "sys.path.append(str(Path().resolve().parent))\n",
+    "import scripts.data_pipeline as dp\n",
+    "\n",
+    "\n",
+    "# Travailler sur une copie dédiée pour ne pas modifier le dataset brut\n",
+    "gkg_df_processing = gkg_df.copy(deep=True)\n",
+    "\n",
+    "# Extraction des deux colonnes utiles\n",
+    "parsed = gkg_df_processing[\"TranslationInfo\"].apply(dp.parse_translation_info).apply(pd.Series)\n",
+    "gkg_df_processing = pd.concat([gkg_df_processing, parsed], axis=1)\n",
+    "\n",
+    "# Aperçu rapide\n",
+    "print(gkg_df_processing[[\"TranslationInfo\", \"translation_source_langs\"]].head(30).to_string())\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3753e34f",
+   "metadata": {},
+   "source": [
+    "## Enregistrement des datasets"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "7a42f252",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✅ Events dataset enregistré : ..\\data\\processed\\events_cleaned.csv\n",
+      "   27,317 lignes × 61 colonnes\n",
+      "\n",
+      "✅ GKG dataset (traité) enregistré : ..\\data\\processed\\gkg_cleaned.csv\n",
+      "   24,453 lignes × 9 colonnes\n",
+      "   Colonnes ajoutées: translation_source_langs\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Définir les chemins de sortie\n",
+    "output_dir = Path('..') / 'data' / 'processed'\n",
+    "output_dir.mkdir(parents=True, exist_ok=True)\n",
+    "\n",
+    "events_output = output_dir / 'events_cleaned.csv'\n",
+    "gkg_output = output_dir / 'gkg_cleaned.csv'\n",
+    "\n",
+    "# Enregistrer events_df nettoyé\n",
+    "events_df_no_missing.to_csv(events_output, index=False)\n",
+    "print(f\"✅ Events dataset enregistré : {events_output}\")\n",
+    "print(f\"   {events_df.shape[0]:,} lignes × {events_df.shape[1]} colonnes\")\n",
+    "\n",
+    "# Enregistrer gkg_df_processing avec les colonnes de traduction\n",
+    "gkg_df_processing.to_csv(gkg_output, index=False)\n",
+    "print(f\"\\n✅ GKG dataset (traité) enregistré : {gkg_output}\")\n",
+    "print(f\"   {gkg_df_processing.shape[0]:,} lignes × {gkg_df_processing.shape[1]} colonnes\")\n",
+    "print(f\"   Colonnes ajoutées: translation_source_langs\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Hackathon_iSHEEROXDatacamp",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.14"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
