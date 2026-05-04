@@ -10,6 +10,8 @@
 - [Installation](#installation)
 - [Extraction des données](#extraction-des-données)
 - [Néttoyage et exploration des données](#néttoyage-et-exploration-des-données)
+- [Analyse approfondir par le ML](#analyse-approfondir-par-le-ml)
+- [Visualisation statistique](#visualisation-statistique)
 
 
 ---
@@ -182,5 +184,13 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 ---
 
 ## Néttoyage et exploration des données
+
+---
+
+## Analyse approfondir par le ML
+
+---
+
+## Visualisation statistique
 
 
