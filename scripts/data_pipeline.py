@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -162,6 +163,63 @@ def _smoke_test_connection() -> None:
     client = get_bq_client()
     df = extract_raw_data(client, "SELECT 1 AS ok")
     logger.info("Connexion OK (ok=%s)", int(df.loc[0, "ok"]))
+
+
+def parse_translation_info(val: str | None) -> dict[str, str | None]:
+    """Extrait les informations de traduction de la colonne TranslationInfo du GKG.
+
+    Retourne:
+    - translation_source_langs: code langue source (ex: 'fra', 'spa') ou None
+    - translation_target: code langue cible si détecté (ex: 'eng') ou None
+
+    Exemples:
+        - 'srclc:fra;eng:GT-FRA 1.0' -> {source: 'fra', target: 'eng'}
+        - 'eng:GT-SPA 1.0' -> {source: 'spa', target: 'eng'}
+        - NaN/empty -> {source: None, target: None}
+
+    Args:
+        val: Valeur brute de TranslationInfo (peut être NaN/None/vide).
+
+    Returns:
+        Dict avec clés 'translation_source_langs' et 'translation_target'.
+    """
+
+    if pd.isna(val) or not str(val).strip():
+        return {
+            "translation_source_langs": None,
+            "translation_target": None,
+        }
+
+    s = str(val).strip().lower()
+    source_lang = None
+    target = None
+
+    # Cas explicite: srclc:fra;eng:GT-FRA 1.0
+    # On garde uniquement la 1ere langue juste apres srclc: et avant le premier ; ou /
+    m_srclc = re.search(r"srclc:([a-z]{2,3})", s)
+    if m_srclc:
+        source_lang = m_srclc.group(1).strip()
+
+    # Cas de traduction du type eng:GT-SPA 1.0
+    # - la partie gauche est la langue cible (eng ici)
+    # - la partie droite contient souvent GT-XXX, où XXX est la langue source
+    if not source_lang:
+        for left_lang, right_part in re.findall(
+            r"([a-z]{2,3})\s*:\s*([a-z0-9\-]+(?:\s+[0-9.]+)?)", s
+        ):
+            right_core = right_part.split()[0]
+            if "-" in right_core:
+                tool_or_prefix, maybe_lang = right_core.split("-", 1)
+                if maybe_lang:
+                    source_lang = maybe_lang
+                    target = left_lang
+                    break
+            elif right_core.startswith("gt") or "translate" in right_core:
+                target = left_lang
+
+    return {
+        "translation_source_langs": source_lang,
+    }
 
 
 if __name__ == "__main__":
