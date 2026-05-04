@@ -9,6 +9,9 @@
 - [Structure du projet](#structure-du-projet)
 - [Installation](#installation)
 - [Extraction des données](#extraction-des-données)
+- [Néttoyage et exploration des données](#néttoyage-et-exploration-des-données)
+- [Analyse approfondir par le ML](#analyse-approfondir-par-le-ml)
+- [Visualisation statistique](#visualisation-statistique)
 
 
 ---
@@ -117,7 +120,7 @@ Attribuer le rôle **BigQuery User** au compte de service créé.
 **Étape 4 — Télécharger la clé JSON**
 
 Cliquer sur le service account → onglet **"Clés"** → **"Ajouter une clé"** → **"JSON"**.  
-Le fichier se télécharge automatiquement.
+Le fichier se télécharge automatiquement. Renommer le fichier en **"credentials.json"**
 
 **Étape 5 — Placer le fichier dans le repo**
 
@@ -176,8 +179,18 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 | **Complexité** | Moyenne | Faible |
 | **Recommandé pour** | Automatisation, CI/CD | Reproduction rapide, jury |
 
->  **Pour le jury :** l'Option B (ADC) est la plus rapide. Une seule commande suffit pour s'authentifier, aucun fichier à déplacer.
+
 
 ---
+
+## Néttoyage et exploration des données
+
+---
+
+## Analyse approfondir par le ML
+
+---
+
+## Visualisation statistique
 
 
