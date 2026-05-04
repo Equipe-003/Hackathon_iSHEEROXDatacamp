@@ -127,5 +127,25 @@ Le code caméo est un dictionnaire universel qui traduit les informations en cod
 4. **Duplication** : Quelques GlobalEventID dupliqués existent (erreur historique dans GDELT) — déduplication sur attributs recommandée.
 5. **Updates** : NumMentions/NumArticles/AvgTone peuvent être mises à jour si le même événement est mentionné ultérieurement (retrouvailled dans archives, pas dans stream quotidien).
 
+---
+## Documentation des données GDELT GKG (Colonnes extraites)
 
+| Colonne | Type | Description | Utilité |
+| :--- | :--- | :--- | :--- |
+| **`Date`** | Entier | Date et heure de publication de l'article au format `AAAAMMJJHHMMSS`. | Permet une synchronisation temporelle précise et l'analyse de l'évolution chronologique des récits. |
+| **`SourceCommonName`** | Texte | Nom convivial du média (ex: `lemonde.fr`) ou de la source (ex: `BBC Monitoring`). | Essentiel pour l'analyse des flux d'information et l'identification des sources d'influence médiatique. |
+| **`Persons`** | Liste délimitée | Noms des personnes physiques identifiées dans le texte par l'algorithme de GDELT. | Permet de repérer les acteurs clés, les leaders d'opinion et de reconstruire les réseaux d'influence. |
+| **`Organizations`** | Liste délimitée | Noms des entreprises, ONG, institutions gouvernementales ou organisations locales. | Utile pour suivre l'implication des entités institutionnelles et corporatives dans les événements mondiaux. |
+| **`Locations`** | Blocs délimitées | Liste des lieux mentionnés incluant codes pays FIPS, coordonnées GPS et noms complets. | Indispensable pour la cartographie et l'analyse spatiale haute résolution des événements. |
+| **`Counts`** | Blocs délimités | Données chiffrées explicites liées à des catégories (ex: "100 manifestants", "50 blessés"). | Permet une évaluation quantitative immédiate de l'ampleur et de l'impact physique des situations rapportées. |
+| **`TranslationInfo`** | Séquence de codes | Informations sur la langue source originale et le système de traduction utilisé. | Permet d'isoler les sources locales non-anglophones issues des 65 langues traduites en temps réel. |
+
+---
+
+### Colonnes stratégiques (Non extraites par limitation de quota)
+
+Il est important de noter que deux colonnes majeures ont été volontairement exclues de notre extraction BigQuery afin de respecter le quota gratuit de **1 To par mois**. Ces colonnes sont les plus volumineuses du dataset GDELT :
+
+1.  **`Themes` / `V2EnhancedThemes` :** Cette colonne catégorise le "Quoi". Elle contient une liste de plus de **300 thématiques** identifiées (Économie, Conflit, Santé, etc.). Son poids est important car elle liste chaque occurrence thématique avec sa position précise dans le texte (offsets).
+2.  **`GCAM` (Global Content Analysis Measures) :** C'est la colonne la plus lourde de GDELT. Elle réalise ce que le projet considère comme le plus grand déploiement d'analyse de sentiment au monde, mesurant plus de **2 300 dimensions émotionnelles** (anxiété, optimisme, passivité, etc.) pour chaque article. À elle seule, elle représente souvent plus de **90 % du volume de données scanné** lors d'une requête.
 
