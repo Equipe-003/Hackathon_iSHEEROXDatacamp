@@ -181,13 +181,12 @@ def parse_translation_info(val: str | None) -> dict[str, str | None]:
         val: Valeur brute de TranslationInfo (peut être NaN/None/vide).
 
     Returns:
-        Dict avec clés 'translation_source_langs' et 'translation_target'.
+        Dict avec clés 'translation_source_langs'.
     """
 
     if pd.isna(val) or not str(val).strip():
         return {
             "translation_source_langs": None,
-            "translation_target": None,
         }
 
     s = str(val).strip().lower()
