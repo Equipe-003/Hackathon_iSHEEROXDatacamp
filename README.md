@@ -9,7 +9,7 @@
 - [Structure du projet](#structure-du-projet)
 - [Installation](#installation)
 - [Extraction des données](#extraction-des-données)
-- [Néttoyage et exploration des données](#Néttoyage et exploration des données)
+- [Néttoyage et exploration des données](#néttoyage-et-exploration-des-données)
 
 
 ---
