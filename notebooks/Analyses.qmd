@@ -10,9 +10,250 @@ jupyter: python3
 !pip install gdeltdoc
 ```
 
+Les analyses effectuées ont porté sur cinq questions de recherche:
+
+-   Quels sont les 50 médias qui parlent le plus du Bénin dans le monde?
+
+-   A quel moment de l'année le ton de l'actualité sur le Bénin  ètait-il le plus négatif, le plus positif?  sur quels sujets? 
+
+-   A quel moment le Bénin a il le plus fait parlé de lui (buzzé) dans le monde? 
+
+-   Quels sont les 10 sujets qui ont eu le plus grand buzz au cours de l'année?
+
+Parmis les 4 grandes catégories d'événements, lequel est le plus représsenté parmis les événements concernant le Bénin pour chaque mois?  
+
+# les 50 médias qui parlent le plus du Bénin dans le monde
+
 ```{python}
 #| echo: false
-2 * 2
+df=pd.read_csv("../data/gdelt_bn_2025.csv")
+pd.set_option('display.max_columns', None)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{python}
+#| echo: false
+# filtre sur les lignes concernant Benin City
+search_string = 'edo|ekpoma|benin city'
+
+df_filtre = df[~(
+    df['Actor1Geo_FullName'].fillna('').str.contains(search_string, case=False, na=False) |
+    df['Actor2Geo_FullName'].fillna('').str.contains(search_string, case=False, na=False)
+)]
+
+print(f"Le DataFrame a été filtré. Nombre de lignes restantes : {len(df)}")
+```
+
+```{python}
+#| echo: false
+import re
+import plotly.express as px
+
+# Fonction pour extraire le domaine de base d'une URL
+def get_base_domain(url):
+    try:
+        # Supprimer le protocole (http/https) et le préfixe 'www.'
+        domain = re.sub(r'^(https?://)?(www\.)?', '', url.lower())
+        # Garder uniquement la partie avant le premier '/' si elle existe
+        domain = domain.split('/')[0]
+        return domain
+    except:
+        return None
+
+# Appliquer la fonction pour créer une nouvelle colonne 'MediaSource'
+df_filtre['MediaSource'] = df_filtre['SOURCEURL'].apply(get_base_domain)
+
+# Compter les occurrences pour chaque source médiatique
+media_counts = df_filtre['MediaSource'].value_counts().reset_index()
+media_counts.columns = ['MediaSource', 'Mentions']
+
+# Obtenir les 50 principales sources médiatiques et créer explicitement une copie pour éviter SettingWithCopyWarning
+top_50_media = media_counts.head(50).copy()
+
+# Calculer la 'part' (pourcentage)
+top_50_media['Part'] = (top_50_media['Mentions'] / top_50_media['Mentions'].sum()) * 100
+
+print("Top 50 des médias qui parlent le plus du Bénin :")
+print(top_50_media[['MediaSource', 'Mentions', 'Part']])
+
+# Créer un Treemap
+fig = px.treemap(
+    top_50_media,
+    path=['MediaSource'],
+    values='Mentions',
+    title='Distribution des Mentions du Bénin par Média (Top 50)',
+    color='Part',
+    color_continuous_scale='Blues',
+    hover_data={'MediaSource':True, 'Mentions':True, 'Part':':.2f%'} # Afficher la part avec 2 décimales
+)
+
+fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+fig.show()
+
+```
+
+## Analyse des thématiques liées au top 10 des médias
+
+```{python}
+#| echo: false
+# Obtenir la liste des 10 premières sources médiatiques
+top_10_media_names = top_50_media['MediaSource'].head(10).tolist()
+
+# Filtrer df_benin pour inclure uniquement les événements de ces 10 médias
+df_top10_media = df_benin[df_benin['MediaSource'].isin(top_10_media_names)].copy()
+
+# Analyse des thématiques via QuadClass et AvgTone
+print("\nAnalyse thématique pour le top 10 des médias :")
+
+# Distribution de QuadClass (type d'événement)
+quadclass_distribution = df_top10_media['QuadClass'].value_counts(normalize=True).mul(100).round(2).sort_index()
+print("\nDistribution des types d'événements (QuadClass) :")
+# Mapping des valeurs QuadClass vers des descriptions plus lisibles
+quadclass_map = {
+    1: 'Coopération Verbale',
+    2: 'Coopération Matérielle',
+    3: 'Conflit Verbal',
+    4: 'Conflit Matériel'
+}
+quadclass_distribution.index = quadclass_distribution.index.map(quadclass_map)
+
+# Renommer l'index pour qu'il devienne une colonne nommée 'QuadClass'
+quadclass_distribution = quadclass_distribution.reset_index()
+quadclass_distribution.columns = ['QuadClass', 'proportion']
+
+print(quadclass_distribution.to_string())
+
+# Tonalité moyenne globale des articles de ces médias
+average_tone_top10 = df_top10_media['AvgTone'].mean()
+print(f"\nTonalité moyenne générale des articles du top 10 des médias : {average_tone_top10:.2f}")
+
+# Tonalité moyenne par média du top 10
+tone_by_media = df_top10_media.groupby('MediaSource')['AvgTone'].mean().sort_values(ascending=False)
+print("\nTonalité moyenne par média (Top 10) :")
+print(tone_by_media.to_string())
+
+# GoldsteinScale moyenne par média du top 10
+goldstein_by_media = df_top10_media.groupby('MediaSource')['GoldsteinScale'].mean().sort_values(ascending=False)
+print("\nGoldsteinScale moyenne par média (Top 10) :")
+print(goldstein_by_media.to_string())
+
+# Visualisation de la distribution des types d'événements (QuadClass)
+fig_quadclass = px.bar(
+    quadclass_distribution,
+    x='QuadClass',
+    y='proportion',
+    title='Distribution des types d\'événements (QuadClass) par le Top 10 des Médias',
+    labels={'QuadClass': 'Type d\'événement', 'proportion': 'Pourcentage (%)'},
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+fig_quadclass.show()
+
+# Visualisation de la tonalité moyenne par média
+fig_tone = px.bar(
+    tone_by_media.reset_index(),
+    x='MediaSource',
+    y='AvgTone',
+    title='Tonalité Moyenne des Articles par Média (Top 10)',
+    labels={'MediaSource': 'Média', 'AvgTone': 'Tonalité Moyenne'},
+    color='AvgTone',
+    color_continuous_scale='RdBu_r'
+)
+fig_tone.show()
+
+# Visualisation de la GoldsteinScale moyenne par média
+fig_goldstein = px.bar(
+    goldstein_by_media.reset_index(),
+    x='MediaSource',
+    y='GoldsteinScale',
+    title='GoldsteinScale Moyenne des Articles par Média (Top 10)',
+    labels={'MediaSource': 'Média', 'GoldsteinScale': 'GoldsteinScale Moyenne'},
+    color='GoldsteinScale',
+    color_continuous_scale='RdBu'
+)
+fig_goldstein.show()
+```
+
+Nous avons exploré les types d'événements et la tonalité des articles provenant des 10 principaux médias qui couvrent le Bénin pour mieux comprendre comment le pays est représenté dans le paysage médiatique.
+
+Comme le montre notre graphique, la majorité des événements rapportés se concentrent sur la **Coopération Verbale** (63.56%). La couverture médiatique est largement orientée vers les discussions, les déclarations, les négociations et les accords pacifiques concernant le Bénin. La **Coopération Matérielle** (9.25%) est également présente, bien que dans une moindre mesure. En revanche, les événements liés aux conflits, qu'ils soient **Verbaux** (12.97%) ou **Matériels** (14.22%), représentent une part significative, mais minoritaire.
+
+La **tonalité moyenne générale** des articles de ce top 10 des médias est légèrement négative avec une moyenne de **-2.04**. Cela pourrait impliquer que, malgré la prédominance de la coopération verbale, les sujets abordés ou la manière de les traiter tendent à être empreints de critiques ou de préoccupationsn évoqués avec une certaine prudence, .
+
+En examinant la tonalité moyenne par média, nous constatons des variations notables :
+
+-   **Le plus positif :** `nigerianobservernews.com` (1.02) se démarque par une couverture généralement positive
+-   **Le plus négatif :** `saharareporters.com` (-4.52) présente la tonalité la plus négative, indiquant une approche plus critique ou axée sur les problèmes.
+
+Ces différences soulignent l'importance de considérer la source de l'information pour comprendre la perspective adoptée.
+
+**GoldsteinScale** évalue l'intensité de la coopération ou du conflit. Des valeurs positives indiquent une tendance coopérative, tandis que des valeurs négatives indiquent le contraire
+
+-   `lanouvelletribune.info` (1.56) et `nigerianobservernews.com` (1.54) affichent les scores les plus élevés, signalant une forte orientation vers des événements coopératifs.
+-   D'autres médias comme `dailypost.ng` (-0.42) et `punchng.com` (-0.09) ont des scores légèrement négatifs, reflétant une couverture incluant davantage d'événements conflictuels.
+
+En résumé, l'analyse révèle un paysage médiatique dominé par les discussions et la coopération, mais avec une tonalité générale prudente et des variations significatives entre les sources. Cela met en lumière la complexité de la perception du Bénin dans les médias régionaux et internationaux.
+
+# Analyse du ton de l'actualité sur le Bénin dans le temps?
+
+```{python}
+#| echo: false
+import pandas as pd
+import plotly.express as px
+
+# Convertir SQLDATE en format de date si ce n'est pas déjà fait
+df_filtre['SQLDATE_DATE'] = pd.to_datetime(df_filtre['SQLDATE'], format='%Y%m%d')
+
+# Extraire le mois et le nom du mois
+ddf_filtre['Month'] = df_filtre['SQLDATE_DATE'].dt.month
+df_filtre['MonthName'] = df_filtre['SQLDATE_DATE'].dt.strftime('%B')
+
+# Calculer la tonalité moyenne par mois
+tone_by_month = df_filtre.groupby(['Month', 'MonthName'])['AvgTone'].mean().reset_index()
+tone_by_month = tone_by_month.sort_values('Month')
+
+# Identifier le mois le plus positif et le plus négatif
+most_positive_month = tone_by_month.loc[tone_by_month['AvgTone'].idxmax()]
+most_negative_month = tone_by_month.loc[tone_by_month['AvgTone'].idxmin()]
+
+print(f"Le mois le plus positif en termes de tonalité moyenne est : {most_positive_month['MonthName']} ({most_positive_month['AvgTone']:.2f})")
+print(f"Le mois le plus négatif en termes de tonalité moyenne est : {most_negative_month['MonthName']} ({most_negative_month['AvgTone']:.2f})")
+
+# Créer une courbe d'évolution de la tonalité moyenne
+fig = px.line(
+    tone_by_month,
+    x='MonthName',
+    y='AvgTone',
+    title='Évolution de la Tonalité Moyenne de l\'Actualité sur le Bénin par Mois',
+    labels={'MonthName': 'Mois', 'AvgTone': 'Tonalité Moyenne'},
+    markers=True,
+    line_shape='linear'
+)
+
+# Mettre en évidence le mois le plus positif et le plus négatif
+fig.add_scatter(
+    x=[most_positive_month['MonthName']],
+    y=[most_positive_month['AvgTone']],
+    mode='markers',
+    name='Mois le plus positif',
+    marker=dict(color='green', size=10)
+)
+fig.add_scatter(
+    x=[most_negative_month['MonthName']],
+    y=[most_negative_month['AvgTone']],
+    mode='markers',
+    name='Mois le plus négatif',
+    marker=dict(color='red', size=10)
+)
+
+fig.update_layout(xaxis_title='Mois', yaxis_title='Tonalité Moyenne')
+fig.show()
+
+
+```
+
+Le graphique ci-dessus illustre l'évolution de la tonalité moyenne (`AvgTone`) de l'actualité sur le Bénin tout au long de l'année. La tonalité est un indicateur de la positivité ou de la négativité des événements rapportés.
+
+-   **Mois le plus positif :** Le mois d'**Octobre** se distingue comme la période où la tonalité moyenne est la plus élevée ({-0.05} sur notre échelle), ce qui suggère que les nouvelles concernant le Bénin étaient majoritairement neutres à légèrement positives durant ce mois.
+
+-   **Mois le plus négatif :** À l'inverse, le mois de **Décembre** affiche la tonalité moyenne la plus basse ({-2.65}), indiquant une couverture médiatique plus critique ou centrée sur des événements perçus comme négatifs.
+
+Cette analyse révèle unegrande fluctuation de la perception médiatique du Bénin au cours de l'année. Alors qu'Octobre semble avoir été une période de nouvelles plus favorables, Décembre a été marqué par une couverture plus sombre. Il serait intéressant d'approfondir l'analyse pour comprendre les événements spécifiques ou les thématiques qui ont contribué à ces variations mensuelles, notamment en examinant les sujets dominants. \*Nous présenterons les résultats approfondis de cette analyse dans un dash board.\* Mais nous identifierons d'abord le sujet ayant le ton le plus positif et celui ayant le ton le plus negatif.
