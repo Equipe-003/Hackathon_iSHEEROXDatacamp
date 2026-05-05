@@ -50,10 +50,21 @@ Ce projet est réalisé dans le cadre du **Hackathon iSHEERO × DataCamp Donates
 │   
 ├── notebooks/
 │   └── data_extraction.ipynb       # Extraction BigQuery
-│    événements
+│   └── data_cleaning.ipynb       # Nettoyage des données brutes extraites   
+│   └── data_exploration.ipynb 
+│   └── ml_classification.ipynb       # Extraction BigQuery
+│   └── ml_clustering.ipynb       # Extraction BigQuery
+│   └── ml_sentiment.ipynb       # Extraction BigQuery       
+│    
 ├── scripts/
 │   └── data_pipeline.py  # Module Python réutilisable (BigQuery)
+|
+|
 ├── models/               # Modèles ML entraînés
+│   └── classification/
+│   └── clustering/  
+│   └── sentiment_analysis       # Extraction BigQuery
+|   
 ├── dashboard/            # Application Streamlit
 ├── credentials/          # Credentials Google Cloud (non versionnés)
 ├── requirements.txt
@@ -88,6 +99,17 @@ pip install -r requirements.txt
 ```
 
 ---
+# Data
+
+## Sources de données
+ 
+Le projet exploite deux tables complémentaires de GDELT qui répondent à des questions différentes.
+ 
+**GDELT Events** répond à la question *"Qui a fait quoi à qui, où et quand ?"*. Chaque ligne est un événement géopolitique — une action concrète entre deux acteurs. C'est une base quantitative et structurée utilisée pour compter et classer les événements, cartographier leur répartition géographique, identifier les acteurs impliqués et mesurer les pics de couverture médiatique.
+ 
+**GDELT GKG** répond à la question *"Comment les médias parlent-ils du Bénin ?"*. Chaque ligne est un article de presse analysé — thèmes détectés, entités nommées, ton éditorial. C'est une base qualitative et sémantique utilisée pour analyser l'évolution du sentiment médiatique dans le temps et identifier les médias les plus actifs.
+ 
+> Un événement peut avoir un **GoldsteinScale positif** (coopération) dans Events mais un **tone négatif** dans GKG si les médias le couvrent dans un contexte critique. C'est cette tension entre les faits et leur perception médiatique qui produit les insights les plus intéressants.
 
 ## Extraction des données
 
@@ -97,8 +119,6 @@ Le pipeline d'extraction est composé de deux fichiers qui communiquent :
 - **`notebooks/data_extraction.ipynb`** — notebook qui pilote l'extraction et sauvegarde le CSV dans `data/raw/`
 
 Pour générer les données via cette pipeline, une authentification auprès de Google BigQuery est nécéssaire.Deux options sont disponibles pour gérer l'authentification.
-
----
 
 ### Option A — Service Account JSON *(recommandée pour ce projet)*
 
@@ -142,8 +162,6 @@ Ouvrir `notebooks/data_extraction.ipynb` **depuis la racine du repo** (dans VS C
 Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 ```
 
----
-
 ### Option B — Application Default Credentials (ADC) *(la plus rapide)*
 
 Cette option ne nécessite aucun fichier JSON. Elle utilise directement votre compte Google via Google Cloud CLI.
@@ -183,25 +201,41 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 
 ---
 
-## Néttoyage et exploration des données
+# Nettoyage et exploration des données
 
-### Néttoyage des données
+## Nettoyage des données
 
-### Exploration des données
+Après l’extraction, une étape de nettoyage des données est réalisée afin de garantir leur qualité et leur exploitabilité pour les analyses ultérieures. Dans le cadre de ce projet, il s’agit d’un **nettoyage primaire**, visant principalement à structurer et préparer les données brutes issues de GDELT.
+
+Ce nettoyage s’organise autour de deux axes principaux :
+
+### 1. Gestion des valeurs manquantes
+
+Un traitement systématique des valeurs manquantes est appliqué selon un seuil de tolérance :
+
+- les colonnes présentant plus de **80 % de valeurs manquantes** sont supprimées ;
+- les colonnes dont le taux de valeurs manquantes est inférieur à ce seuil sont conservées en l’état, afin de préserver l’information utile pour les étapes d’analyse et de modélisation.
+
+### 2. Traitement des informations linguistiques
+
+Le dataset GKG comporte une variable `TranslationInfo` qui renseigne, pour les articles non anglophones, la langue d’origine ainsi que le système de traduction utilisé.
+
+Les valeurs de cette variable suivent un format spécifique incluant systématiquement l’anglais comme langue de destination. À partir de cette structure, une nouvelle variable intitulée :
+`translation_source_langs`
+a été construite afin d’extraire et de conserver uniquement la **langue source des articles**. Cette transformation permet d’identifier la diversité linguistique des sources médiatiques et d’enrichir les analyses en intégrant une dimension géolinguistique pertinente.
+
+### 3. Remarque
+
+Ce nettoyage constitue une étape préliminaire du pipeline. Des traitements plus avancés (normalisation, filtrage du bruit, feature engineering) pourront être appliqués ultérieurement en fonction des besoins spécifiques des analyses et des modèles.
+
+Le code de nettoyage est implémenté dans le module `scripts/data_pipeline.py`, qui contient les fonctions réutilisables du pipeline.
+Le notebook `notebooks/data_cleaning.ipynb` orchestre l’exécution de ces fonctions, permettant de reproduire les étapes de nettoyage et d’enregistrer les données traitées dans le dossier :`data/processed/`
+
+## Exploration des données
 
 L'analyse exploratoire est conduite dans `notebooks/data_exploration.ipynb` et s'appuie sur les deux datasets GDELT nettoyés : **Events** (`data/processed/events_cleaned.csv`) et **GKG** (`data/processed/gkg_cleaned.csv`).
  
-### Sources de données
- 
-Le projet exploite deux tables complémentaires de GDELT qui répondent à des questions différentes.
- 
-**GDELT Events** répond à la question *"Qui a fait quoi à qui, où et quand ?"*. Chaque ligne est un événement géopolitique — une action concrète entre deux acteurs. C'est une base quantitative et structurée utilisée pour compter et classer les événements, cartographier leur répartition géographique, identifier les acteurs impliqués et mesurer les pics de couverture médiatique.
- 
-**GDELT GKG** répond à la question *"Comment les médias parlent-ils du Bénin ?"*. Chaque ligne est un article de presse analysé — thèmes détectés, entités nommées, ton éditorial. C'est une base qualitative et sémantique utilisée pour analyser l'évolution du sentiment médiatique dans le temps et identifier les médias les plus actifs.
- 
-> Un événement peut avoir un **GoldsteinScale positif** (coopération) dans Events mais un **tone négatif** dans GKG si les médias le couvrent dans un contexte critique. C'est cette tension entre les faits et leur perception médiatique qui produit les insights les plus intéressants.
- 
----
+
  
 ### Analyses réalisées
  
@@ -280,4 +314,3 @@ Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_anal
 ## Visualisation statistique
 
 
-PS:L’intelligence artificielle a été utilisée de manière ciblée et réfléchie pour accélérer certaines étapes d’analyse, de structuration et de rédaction, tout en laissant l’interprétation et les arbitrages méthodologiques sous contrôle humain
