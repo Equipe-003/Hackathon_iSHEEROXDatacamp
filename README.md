@@ -185,11 +185,97 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 
 ## Néttoyage et exploration des données
 
+### Néttoyage des données
+
+### Exploration des données
+
+L'analyse exploratoire est conduite dans `notebooks/data_exploration.ipynb` et s'appuie sur les deux datasets GDELT nettoyés : **Events** (`data/processed/events_cleaned.csv`) et **GKG** (`data/processed/gkg_cleaned.csv`).
+ 
+### Sources de données
+ 
+Le projet exploite deux tables complémentaires de GDELT qui répondent à des questions différentes.
+ 
+**GDELT Events** répond à la question *"Qui a fait quoi à qui, où et quand ?"*. Chaque ligne est un événement géopolitique — une action concrète entre deux acteurs. C'est une base quantitative et structurée utilisée pour compter et classer les événements, cartographier leur répartition géographique, identifier les acteurs impliqués et mesurer les pics de couverture médiatique.
+ 
+**GDELT GKG** répond à la question *"Comment les médias parlent-ils du Bénin ?"*. Chaque ligne est un article de presse analysé — thèmes détectés, entités nommées, ton éditorial. C'est une base qualitative et sémantique utilisée pour analyser l'évolution du sentiment médiatique dans le temps et identifier les médias les plus actifs.
+ 
+> Un événement peut avoir un **GoldsteinScale positif** (coopération) dans Events mais un **tone négatif** dans GKG si les médias le couvrent dans un contexte critique. C'est cette tension entre les faits et leur perception médiatique qui produit les insights les plus intéressants.
+ 
+---
+ 
+### Analyses réalisées
+ 
+#### Types d'événements
+ 
+Les événements sont classifiés selon la taxonomie CAMEO à deux niveaux de granularité : les **20 catégories `EventRootCode`** (déclarations publiques, protestations, conflits armés, aide humanitaire...) et les **4 grandes catégories `QuadClass`** (coopération verbale, coopération matérielle, conflit verbal, conflit matériel). Cette double lecture permet d'identifier à la fois la nature précise des événements et leur polarité générale.
+ 
+#### Répartition géographique par département
+ 
+Les événements localisés précisément (ActionGeo_Type 4 et 5, soit ~12% du dataset) sont mappés aux 12 départements béninois via une stratégie combinée : code ADM1 direct, inférence par nom de ville, et géolocalisation par bounding box GPS. Une heatmap département × QuadClass révèle les zones de concentration des conflits et des coopérations.
+ 
+> **Note méthodologique :** 88% des événements GDELT sont localisés uniquement au niveau national. L'analyse départementale est indicative et porte sur les événements géolocalisés précisément.
+ 
+#### Dimension Nationale vs internationale
+ 
+Chaque événement est qualifié selon que les acteurs impliqués sont béninois ou étrangers, permettant de mesurer quelle part de l'actualité du Bénin implique des acteurs extérieurs et dans quels départements cette internationalisation est la plus prononcée.
+ 
+#### Acteurs les plus impliqués par type d'événement
+ 
+Les acteurs nommés (pays, organisations, leaders) sont croisés avec les catégories QuadClass pour identifier qui apparaît dans les événements coopératifs versus conflictuels. Les acteurs génériques (GOVERNMENT, POLICE, MILITARY) sont exclus pour ne retenir que les entités nommées significatives.
+ 
+#### Pics de couverture médiatique (buzz)
+ 
+Un score de buzz composite est calculé pour chaque événement en combinant `NumMentions` (×0.4), `NumSources` (×0.4) et `NumArticles` (×0.2) après normalisation Min-Max. Ce score permet d'identifier les mois où le Bénin a le plus attiré l'attention médiatique mondiale et de relier ces pics aux événements déclencheurs.
+ 
+#### Top 10 médias couvrant le Bénin
+ 
+Le classement est construit par croisement des deux datasets : le volume d'événements couverts est issu de Events (extraction du domaine depuis `SOURCEURL`). Cette fusion permet d'identifier non seulement les médias les plus actifs, mais aussi leur origine — A quel point le Bénin est il représenté dans les médias à l'international ?
+ 
+#### Évolution du ton médiatique — GKG
+ 
+Le champ `V2Tone` du GKG est parsé en 6 dimensions (tone global, score positif, score négatif, polarité, activité, auto-référence). L'agrégation mensuelle révèle les périodes de couverture la plus négative et la plus positive, ainsi que les mois de forte polarité où les médias étaient émotionnellement divisés — même si le tone net semblait modéré.
+
+D'autre analyses détaillées répondant à des questions utiles à la décision sont présentent dans le notebook `visualisations_insights_gdeltevents.ipynb`
+
 ---
 
 ## Analyse approfondir par le ML
 
----
+Les modèles de machine learning sont développés dans trois notebooks dédiés.
+ 
+### Clustering K-Means — `notebooks/ml_clustering.ipynb`
+ 
+Une première version du clustering est intégrée directement dans le notebook d'exploration comme preuve de concept puis dans le notebook `ml_clustering.ipynb`. Les événements sont regroupés en clusters homogènes à partir de quatre features numériques (`GoldsteinScale`, `AvgTone`, `NumMentions`, `NumSources`). Le nombre optimal de clusters est déterminé par la méthode du coude combinée au score de silhouette. Chaque cluster est ensuite profilé selon sa polarité moyenne (coopératif, conflictuel, mixte) et sa relation avec les catégories QuadClass.
+
+ ### Classification — `notebooks/ml_classification.ipynb`
+Une première version du clustering est intégrée directement dans le notebook d'exploration comme preuve de concept puis dans le notebook `ml_classification.ipynb`. Il s'agit d'un modèle de classification des catégories d'évenements (QuardClass) basé sur quatre features numériques (`GoldsteinScale`, `AvgTone`, `NumMentions`, `NumSources`).
+ 
+### Analyse de sentiment — `notebooks/ml_sentiment.ipynb`
+ 
+Ce notebook construit deux modèles complémentaires d'analyse de sentiment à partir des features structurelles des événements GDELT.
+ 
+**Modèle 1 — Régression AvgTone**
+ 
+Prédit la valeur numérique du tone médiatique d'un événement. Quatre algorithmes sont comparés : une baseline (prédiction de la moyenne), une régression Ridge, un Random Forest et un Gradient Boosting. La sélection du meilleur modèle repose sur le R² et le MAE. L'importance des features révèle quelles caractéristiques d'un événement sont les plus prédictives de sa couverture médiatique.
+ 
+**Modèle 2 — Classification Sentiment**
+ 
+Classifie chaque événement en trois catégories (positif, neutre, négatif) selon des seuils définis sur la distribution de `AvgTone` (seuils à ±2). Les mêmes quatre algorithmes sont comparés, évalués sur l'accuracy et le F1-macro (qui pénalise les classes ignorées). La classe `balanced` est appliquée pour gérer le déséquilibre naturel entre les catégories.
+ 
+**Features utilisées**
+ 
+| Feature | Source | Rôle |
+|---------|--------|------|
+| `GoldsteinScale` | Events | Impact théorique de l'événement sur la stabilité |
+| `NumMentions` | Events | Volume de citations médias |
+| `NumSources` | Events | Diversité des sources |
+| `NumArticles` | Events | Couverture totale |
+| `QuadClass` | Events | Grande catégorie de l'événement |
+| `EventRootCode` | Events | Type précis de l'action (CAMEO) |
+ 
+**Modèles sauvegardés**
+ 
+Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_analysis/`, `models/classification/`, `models/clustering/` pour être réutilisés directement par le dashboard Streamlit sans ré-entraînement.
 
 ## Visualisation statistique
 
