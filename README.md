@@ -280,3 +280,4 @@ Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_anal
 ## Visualisation statistique
 
 
+PS:L’intelligence artificielle a été utilisée de manière ciblée et réfléchie pour accélérer certaines étapes d’analyse, de structuration et de rédaction, tout en laissant l’interprétation et les arbitrages méthodologiques sous contrôle humain
