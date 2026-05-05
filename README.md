@@ -20,7 +20,7 @@
 
 Ce projet est réalisé dans le cadre du **Hackathon iSHEERO × DataCamp Donates 2026 — Bénin Insights Challenge**.
 
-**Mission :** Extraire et analyser les événements concernant le Bénin depuis la base de données mondiale **GDELT** sur l'année 2025, puis produire des insights actionnables à destination de journalistes, chercheurs et décideurs publics.
+**Mission :** Extraire et analyser les événements concernant le Bénin depuis la base de données mondiale **GDELT** sur les 12 derniers mois (Jan 2025 – Décembre 2025), puis produire des insights actionnables à destination de journalistes, chercheurs et décideurs publics.
 
 **Source de données :** [GDELT](https://www.gdeltproject.org/) (Global Database of Events, Language and Tone) — une base publique qui surveille en temps réel les médias du monde entier dans plus de 100 langues, disponible sur Google BigQuery.
 

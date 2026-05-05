@@ -62,5 +62,4 @@ htmlcov/
 dashboard/output/
 dashboard/cache/
 models/checkpoints/
-*.pkl
 *.joblib
