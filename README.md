@@ -319,6 +319,8 @@ Ce travail repose sur l’exploitation des bases de données GDELT (Events et GK
 
 L'analyse met en lumière une fracture lors du mois de décembre 2025. Alors que le graphique en mode "Count" révèle une explosion du volume de publications, le passage au graphique en "Moyenne de Tonalité" (Average Tone) montre une chute brutale de la tonalité, plongeant sous la barre des -5. Cette divergence confirme une crise médiatique majeure où l'intensité de l'information s'accompagne d'une forte négativité. On observe que si les médias internationaux maintiennent une certaine neutralité sur l'année, ils s'alignent sur la presse francophone en fin d'année, illustrant une dégradation généralisée de la perception des événements béninois à l'échelle mondiale.
 
+Interface du dashboard
+![Dashboard interface](dashboard/Dashboard.jpeg)
 
 
 **PS:** L’intelligence artificielle a été utilisée de manière ciblée et réfléchie pour accélérer certaines étapes d’analyse, de structuration et de rédaction, tout en laissant l’interprétation et les arbitrages méthodologiques sous contrôle humain
