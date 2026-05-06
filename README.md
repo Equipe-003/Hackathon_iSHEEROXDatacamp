@@ -51,22 +51,21 @@ Ce projet est réalisé dans le cadre du **Hackathon iSHEERO × DataCamp Donates
 ├── notebooks/
 │   └── data_extraction.ipynb       # Extraction BigQuery
 │   └── data_cleaning.ipynb       # Nettoyage des données brutes extraites   
-│   └── data_exploration.ipynb 
-│   └── ml_classification.ipynb       # Extraction BigQuery
-│   └── ml_clustering.ipynb       # Extraction BigQuery
-│   └── ml_sentiment.ipynb       # Extraction BigQuery       
-│    
+│   └── data_exploration.ipynb      # EDA des données
+│   └── ml_classification.ipynb       # algorithme de ML
+│   └── ml_clustering.ipynb       # algorithme de ML
+│   └── ml_sentiment.ipynb       # algorithme de ML       
+│   └── visualisations_insights_gdeltevents.ipynb       # visualisation statistique du dataset 
 ├── scripts/
 │   └── data_pipeline.py  # Module Python réutilisable (BigQuery)
 |
 |
 ├── models/               # Modèles ML entraînés
-│   └── classification/
-│   └── clustering/  
-│   └── sentiment_analysis       # Extraction BigQuery
+│   └── classification/    # Modèle de classification des events
+│   └── clustering/        # Modèle de clustering des évenements   
+│   └── sentiment_analysis/       # Modèles d'analyse du ton/sentiment autour de l'actualité
 |   
-├── dashboard/            # Application Streamlit
-├── credentials/          # Credentials Google Cloud (non versionnés)
+├── dashboard/            # Power BI
 ├── requirements.txt
 └── README.md
 ```
