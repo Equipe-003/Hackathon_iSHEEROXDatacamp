@@ -11,7 +11,7 @@
 - [Extraction des données](#extraction-des-données)
 - [Néttoyage et exploration des données](#néttoyage-et-exploration-des-données)
 - [Analyse approfondir par le ML](#analyse-approfondir-par-le-ml)
-- [Visualisation statistique](#visualisation-statistique)
+- [Dashboard](#dashboard)
 
 
 ---
@@ -200,7 +200,7 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 
 ---
 
-# Nettoyage et exploration des données
+## Néttoyage et exploration des données
 
 ## Nettoyage des données
 
@@ -310,7 +310,7 @@ Classifie chaque événement en trois catégories (positif, neutre, négatif) se
  
 Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_analysis/`, `models/classification/`, `models/clustering/` pour être réutilisés directement par le dashboard Streamlit sans ré-entraînement.
 
-## Visualisation statistique
+## Dashboard
 
 
 **PS:** L’intelligence artificielle a été utilisée de manière ciblée et réfléchie pour accélérer certaines étapes d’analyse, de structuration et de rédaction, tout en laissant l’interprétation et les arbitrages méthodologiques sous contrôle humain
