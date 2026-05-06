@@ -311,11 +311,11 @@ Classifie chaque événement en trois catégories (positif, neutre, négatif) se
 Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_analysis/`, `models/classification/`, `models/clustering/` pour être réutilisés directement par le dashboard Streamlit sans ré-entraînement.
 
 ## Dashboard
-Méthodologie et navigation du Dashboard
+**Méthodologie et navigation du Dashboard**
 
 Ce travail repose sur l’exploitation des bases de données GDELT (Events et GKG) pour analyser la couverture médiatique du Bénin sur l'année 2025. Le Dashboard permet de croiser le volume d'articles (mesuré par le nombre d'occurrences) avec la tonalité moyenne des récits, tout en distinguant les médias francophones/nationaux des médias internationaux. Pour une lecture optimale, l'utilisateur peut naviguer entre les tendances temporelles et les acteurs clés. Une fonctionnalité a été intégrée : en survolant simplement les points ou les barres du graphique, vous ferez apparaître le détail des types d'événements CAMEO associés, permettant ainsi de comprendre précisément quels faits (manifestations, accords diplomatiques, etc.) génèrent les pics d'activité. Les articles peuvent être lus en cliquant directement sur leurs adresses affichées dans le tableau. La carte renseigne sur la localisation de l'événement. 
 
-Analyse des résultats et crise de décembre
+**Analyse des résultats et crise de décembre**
 
 L'analyse met en lumière une fracture lors du mois de décembre 2025. Alors que le graphique en mode "Count" révèle une explosion du volume de publications, le passage au graphique en "Moyenne de Tonalité" (Average Tone) montre une chute brutale de la tonalité, plongeant sous la barre des -5. Cette divergence confirme une crise médiatique majeure où l'intensité de l'information s'accompagne d'une forte négativité. On observe que si les médias internationaux maintiennent une certaine neutralité sur l'année, ils s'alignent sur la presse francophone en fin d'année, illustrant une dégradation généralisée de la perception des événements béninois à l'échelle mondiale.
 
