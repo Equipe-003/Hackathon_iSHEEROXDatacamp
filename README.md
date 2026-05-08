@@ -308,7 +308,7 @@ Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_anal
 
 ## 9. Dashboard
 
-🔗 **Dashboard en ligne :** [à compléter — lien Power BI / Streamlit]
+🔗 **Dashboard en ligne :** [à compléter — lien Streamlit]
 
 ### 9.1 Méthodologie et navigation
 
