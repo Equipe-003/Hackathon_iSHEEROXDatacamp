@@ -2,21 +2,25 @@
 
 > **Transformer des données mondiales en connaissance locale.**
 
+---
+
 ## Table des matières
 
-- [Présentation du projet](#présentation-du-projet)
-- [Équipe](#équipe)
-- [Structure du projet](#structure-du-projet)
-- [Installation](#installation)
-- [Extraction des données](#extraction-des-données)
-- [Néttoyage et exploration des données](#néttoyage-et-exploration-des-données)
-- [Analyse approfondir par le ML](#analyse-approfondir-par-le-ml)
-- [Dashboard](#dashboard)
-
+1. [Présentation du projet](#1-présentation-du-projet)
+2. [Équipe](#2-équipe)
+3. [Structure du projet](#3-structure-du-projet)
+4. [Installation](#4-installation)
+5. [Sources de données](#5-sources-de-données)
+6. [Extraction des données](#6-extraction-des-données)
+7. [Nettoyage et exploration des données](#7-nettoyage-et-exploration-des-données)
+8. [Analyse approfondie par le ML](#8-analyse-approfondie-par-le-ml)
+9. [Dashboard](#9-dashboard)
+10. [Insights clés](#10-insights-clés)
+11. [Usage de l'IA](#11-usage-de-lia)
 
 ---
 
-## Présentation du projet
+## 1. Présentation du projet
 
 Ce projet est réalisé dans le cadre du **Hackathon iSHEERO × DataCamp Donates 2026 — Bénin Insights Challenge**.
 
@@ -29,60 +33,59 @@ Ce projet est réalisé dans le cadre du **Hackathon iSHEERO × DataCamp Donates
 
 ---
 
-## Équipe
+## 2. Équipe
 
 | Profil | Nom | Responsabilité |
 |--------|-----|----------------|
-|  Data Engineer | Martin-Junior ADECHI | Pipeline GDELT, extraction BigQuery, nettoyage des données |
-|  Data Analyst | Denakpo Paule | Dashboard interactif, visualisations, executive summary |
-|  ML Engineer | BONI Zoul | Analyse de sentiment, clustering, classification des événements |
-|  Data Scientist | TADOGBE Ahouéfa Trésor Steffi | Approche analytique, interprétation, rapport final, pitch |
+| Data Engineer | Martin-Junior ADECHI | Pipeline GDELT, extraction BigQuery, nettoyage des données |
+| Data Analyst | Denakpo Paule | Dashboard interactif, visualisations, executive summary |
+| ML Engineer | BONI Zoul | Analyse de sentiment, clustering, classification des événements |
+| Data Scientist | TADOGBE Ahouéfa Trésor Steffi | Approche analytique, interprétation, rapport final, pitch |
 
 ---
 
-## Structure du projet
+## 3. Structure du projet
 
 ```
 .
 ├── data/
-│   ├── raw/              # Données brutes extraites de BigQuery
-│   └── processed/        # Données nettoyées 
-│   
+│   ├── raw/                                          # Données brutes extraites de BigQuery
+│   └── processed/                                    # Données nettoyées
+│
 ├── notebooks/
-│   └── data_extraction.ipynb       # Extraction BigQuery
-│   └── data_cleaning.ipynb       # Nettoyage des données brutes extraites   
-│   └── data_exploration.ipynb      # EDA des données
-│   └── ml_classification.ipynb       # algorithme de ML
-│   └── ml_clustering.ipynb       # algorithme de ML
-│   └── ml_sentiment.ipynb       # algorithme de ML       
-│   └── visualisations_insights_gdeltevents.ipynb       # visualisation statistique du dataset 
+│   ├── data_extraction.ipynb                         # Extraction BigQuery
+│   ├── data_cleaning.ipynb                           # Nettoyage des données brutes
+│   ├── data_exploration.ipynb                        # Analyse exploratoire (EDA)
+│   ├── ml_classification.ipynb                       # Modèle de classification
+│   ├── ml_clustering.ipynb                           # Modèle de clustering
+│   ├── ml_sentiment.ipynb                            # Analyse de sentiment
+│   └── visualisations_insights_gdeltevents.ipynb     # Visualisations statistiques
+│
 ├── scripts/
-│   └── data_pipeline.py  # Module Python réutilisable (BigQuery)
-|
-|
-├── models/               # Modèles ML entraînés
-│   └── classification/    # Modèle de classification des events
-│   └── clustering/        # Modèle de clustering des évenements   
-│   └── sentiment_analysis/       # Modèles d'analyse du ton/sentiment autour de l'actualité
-|   
-├── dashboard/            # Power BI
+│   └── data_pipeline.py                              # Module Python réutilisable (BigQuery)
+│
+├── models/
+│   ├── classification/                               # Modèle de classification des événements
+│   ├── clustering/                                   # Modèle de clustering des événements
+│   └── sentiment_analysis/                           # Modèles d'analyse du ton/sentiment
+│
+├── dashboard/                                        # Power BI
 ├── requirements.txt
 └── README.md
 ```
- 
-> Les données sont régénérables via le notebook d'extraction (voir ci-dessous).  
 
+> Les données sont régénérables via le notebook d'extraction (voir section [6. Extraction des données](#6-extraction-des-données)).
 
 ---
 
-## Installation
+## 4. Installation
 
-### Prérequis
+### 4.1 Prérequis
 
 - Python 3.11+
 - Un compte Google (pour l'accès BigQuery)
 
-### Cloner le repo et installer les dépendances
+### 4.2 Cloner le repo et installer les dépendances
 
 ```bash
 git clone https://github.com/[organisation]/[repo]
@@ -98,28 +101,29 @@ pip install -r requirements.txt
 ```
 
 ---
-# Data
 
-## Sources de données
- 
+## 5. Sources de données
+
 Le projet exploite deux tables complémentaires de GDELT qui répondent à des questions différentes.
- 
+
 **GDELT Events** répond à la question *"Qui a fait quoi à qui, où et quand ?"*. Chaque ligne est un événement géopolitique — une action concrète entre deux acteurs. C'est une base quantitative et structurée utilisée pour compter et classer les événements, cartographier leur répartition géographique, identifier les acteurs impliqués et mesurer les pics de couverture médiatique.
- 
+
 **GDELT GKG** répond à la question *"Comment les médias parlent-ils du Bénin ?"*. Chaque ligne est un article de presse analysé — thèmes détectés, entités nommées, ton éditorial. C'est une base qualitative et sémantique utilisée pour analyser l'évolution du sentiment médiatique dans le temps et identifier les médias les plus actifs.
- 
+
 > Un événement peut avoir un **GoldsteinScale positif** (coopération) dans Events mais un **tone négatif** dans GKG si les médias le couvrent dans un contexte critique. C'est cette tension entre les faits et leur perception médiatique qui produit les insights les plus intéressants.
 
-## Extraction des données
+---
+
+## 6. Extraction des données
 
 Le pipeline d'extraction est composé de deux fichiers qui communiquent :
 
 - **`scripts/data_pipeline.py`** — module Python avec les fonctions BigQuery réutilisables
 - **`notebooks/data_extraction.ipynb`** — notebook qui pilote l'extraction et sauvegarde le CSV dans `data/raw/`
 
-Pour générer les données via cette pipeline, une authentification auprès de Google BigQuery est nécéssaire.Deux options sont disponibles pour gérer l'authentification.
+Pour générer les données via ce pipeline, une authentification auprès de Google BigQuery est nécessaire. Deux options sont disponibles.
 
-### Option A — Service Account JSON *(recommandée pour ce projet)*
+### 6.1 Option A — Service Account JSON *(recommandée pour ce projet)*
 
 Cette option utilise une clé d'accès liée à un projet Google Cloud spécifique.
 
@@ -151,7 +155,7 @@ mkdir credentials
 mv ~/Downloads/votre-fichier.json credentials/credentials.json
 ```
 
-> Ne jamais committer ce fichier sur GitHub. Il est déjà listé dans le `.gitignore`.
+> ⚠️ Ne jamais committer ce fichier sur GitHub. Il est déjà listé dans le `.gitignore`.
 
 **Étape 6 — Lancer l'extraction**
 
@@ -161,7 +165,7 @@ Ouvrir `notebooks/data_extraction.ipynb` **depuis la racine du repo** (dans VS C
 Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 ```
 
-### Option B — Application Default Credentials (ADC) *(la plus rapide)*
+### 6.2 Option B — Application Default Credentials (ADC) *(la plus rapide)*
 
 Cette option ne nécessite aucun fichier JSON. Elle utilise directement votre compte Google via Google Cloud CLI.
 
@@ -175,19 +179,17 @@ Télécharger et installer depuis : [cloud.google.com/sdk/docs/install](https://
 gcloud auth application-default login
 ```
 
-Un navigateur s'ouvre automatiquement. Se connecter avec un compte Google qui a accès à BigQuery. C'est tout.
+Un navigateur s'ouvre automatiquement. Se connecter avec un compte Google qui a accès à BigQuery.
 
 **Étape 3 — Lancer l'extraction**
 
-Le script `scripts/data_pipeline.py` détecte automatiquement ces credentials sans aucune modification de code. Ouvrir et exécuter `notebooks/data_pipeline.ipynb` normalement.
+Le script `scripts/data_pipeline.py` détecte automatiquement ces credentials sans aucune modification de code. Ouvrir et exécuter `notebooks/data_extraction.ipynb` normalement.
 
 ```
-Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
+Résultat : data/raw/gdelt_bn_2025.csv et data/raw/gdelt_gkg_bn_2025.csv sont générés automatiquement.
 ```
 
----
-
-### Comparatif des deux options
+### 6.3 Comparatif des deux options
 
 | | Option A — Service Account | Option B — ADC |
 |---|---|---|
@@ -196,107 +198,99 @@ Résultat : data/raw/gdelt_bn_2025.csv est généré automatiquement.
 | **Complexité** | Moyenne | Faible |
 | **Recommandé pour** | Automatisation, CI/CD | Reproduction rapide, jury |
 
-
-
 ---
 
-## Néttoyage et exploration des données
+## 7. Nettoyage et exploration des données
 
-## Nettoyage des données
+### 7.1 Nettoyage des données
 
-Après l’extraction, une étape de nettoyage des données est réalisée afin de garantir leur qualité et leur exploitabilité pour les analyses ultérieures. Dans le cadre de ce projet, il s’agit d’un **nettoyage primaire**, visant principalement à structurer et préparer les données brutes issues de GDELT.
+Après l'extraction, une étape de nettoyage est réalisée afin de garantir la qualité et l'exploitabilité des données pour les analyses ultérieures. Dans le cadre de ce projet, il s'agit d'un **nettoyage primaire**, visant principalement à structurer et préparer les données brutes issues de GDELT.
 
-Ce nettoyage s’organise autour de deux axes principaux :
+Ce nettoyage s'organise autour de deux axes principaux :
 
-### 1. Gestion des valeurs manquantes
+#### 7.1.1 Gestion des valeurs manquantes
 
 Un traitement systématique des valeurs manquantes est appliqué selon un seuil de tolérance :
 
 - les colonnes présentant plus de **80 % de valeurs manquantes** sont supprimées ;
-- les colonnes dont le taux de valeurs manquantes est inférieur à ce seuil sont conservées en l’état, afin de préserver l’information utile pour les étapes d’analyse et de modélisation.
+- les colonnes dont le taux de valeurs manquantes est inférieur à ce seuil sont conservées en l'état, afin de préserver l'information utile pour les étapes d'analyse et de modélisation.
 
-### 2. Traitement des informations linguistiques
+#### 7.1.2 Traitement des informations linguistiques
 
-Le dataset GKG comporte une variable `TranslationInfo` qui renseigne, pour les articles non anglophones, la langue d’origine ainsi que le système de traduction utilisé.
+Le dataset GKG comporte une variable `TranslationInfo` qui renseigne, pour les articles non anglophones, la langue d'origine ainsi que le système de traduction utilisé.
 
-Les valeurs de cette variable suivent un format spécifique incluant systématiquement l’anglais comme langue de destination. À partir de cette structure, une nouvelle variable intitulée :
-`translation_source_langs`
-a été construite afin d’extraire et de conserver uniquement la **langue source des articles**. Cette transformation permet d’identifier la diversité linguistique des sources médiatiques et d’enrichir les analyses en intégrant une dimension géolinguistique pertinente.
+À partir de cette structure, une nouvelle variable `translation_source_langs` a été construite afin d'extraire et de conserver uniquement la **langue source des articles**. Cette transformation permet d'identifier la diversité linguistique des sources médiatiques et d'enrichir les analyses en intégrant une dimension géolinguistique pertinente.
 
-### 3. Remarque
+#### 7.1.3 Remarque
 
 Ce nettoyage constitue une étape préliminaire du pipeline. Des traitements plus avancés (normalisation, filtrage du bruit, feature engineering) pourront être appliqués ultérieurement en fonction des besoins spécifiques des analyses et des modèles.
 
-Le code de nettoyage est implémenté dans le module `scripts/data_pipeline.py`, qui contient les fonctions réutilisables du pipeline.
-Le notebook `notebooks/data_cleaning.ipynb` orchestre l’exécution de ces fonctions, permettant de reproduire les étapes de nettoyage et d’enregistrer les données traitées dans le dossier :`data/processed/`
+Le code de nettoyage est implémenté dans `scripts/data_pipeline.py`. Le notebook `notebooks/data_cleaning.ipynb` orchestre l'exécution de ces fonctions et enregistre les données traitées dans `data/processed/`.
 
-## Exploration des données
+### 7.2 Exploration des données
 
 L'analyse exploratoire est conduite dans `notebooks/data_exploration.ipynb` et s'appuie sur les deux datasets GDELT nettoyés : **Events** (`data/processed/events_cleaned.csv`) et **GKG** (`data/processed/gkg_cleaned.csv`).
- 
 
- 
-### Analyses réalisées
- 
-#### Types d'événements
- 
+#### 7.2.1 Types d'événements
+
 Les événements sont classifiés selon la taxonomie CAMEO à deux niveaux de granularité : les **20 catégories `EventRootCode`** (déclarations publiques, protestations, conflits armés, aide humanitaire...) et les **4 grandes catégories `QuadClass`** (coopération verbale, coopération matérielle, conflit verbal, conflit matériel). Cette double lecture permet d'identifier à la fois la nature précise des événements et leur polarité générale.
- 
-#### Répartition géographique par département
- 
+
+#### 7.2.2 Répartition géographique par département
+
 Les événements localisés précisément (ActionGeo_Type 4 et 5, soit ~12% du dataset) sont mappés aux 12 départements béninois via une stratégie combinée : code ADM1 direct, inférence par nom de ville, et géolocalisation par bounding box GPS. Une heatmap département × QuadClass révèle les zones de concentration des conflits et des coopérations.
- 
+
 > **Note méthodologique :** 88% des événements GDELT sont localisés uniquement au niveau national. L'analyse départementale est indicative et porte sur les événements géolocalisés précisément.
- 
-#### Dimension Nationale vs internationale
- 
+
+#### 7.2.3 Dimension nationale vs. internationale
+
 Chaque événement est qualifié selon que les acteurs impliqués sont béninois ou étrangers, permettant de mesurer quelle part de l'actualité du Bénin implique des acteurs extérieurs et dans quels départements cette internationalisation est la plus prononcée.
- 
-#### Acteurs les plus impliqués par type d'événement
- 
+
+#### 7.2.4 Acteurs les plus impliqués par type d'événement
+
 Les acteurs nommés (pays, organisations, leaders) sont croisés avec les catégories QuadClass pour identifier qui apparaît dans les événements coopératifs versus conflictuels. Les acteurs génériques (GOVERNMENT, POLICE, MILITARY) sont exclus pour ne retenir que les entités nommées significatives.
- 
-#### Pics de couverture médiatique (buzz)
- 
+
+#### 7.2.5 Pics de couverture médiatique (buzz)
+
 Un score de buzz composite est calculé pour chaque événement en combinant `NumMentions` (×0.4), `NumSources` (×0.4) et `NumArticles` (×0.2) après normalisation Min-Max. Ce score permet d'identifier les mois où le Bénin a le plus attiré l'attention médiatique mondiale et de relier ces pics aux événements déclencheurs.
- 
-#### Top 10 médias couvrant le Bénin
- 
-Le classement est construit par croisement des deux datasets : le volume d'événements couverts est issu de Events (extraction du domaine depuis `SOURCEURL`). Cette fusion permet d'identifier non seulement les médias les plus actifs, mais aussi leur origine — A quel point le Bénin est il représenté dans les médias à l'international ?
- 
-#### Évolution du ton médiatique — GKG
- 
+
+#### 7.2.6 Top 10 médias couvrant le Bénin
+
+Le classement est construit par croisement des deux datasets : le volume d'événements couverts est issu de Events (extraction du domaine depuis `SOURCEURL`). Cette fusion permet d'identifier non seulement les médias les plus actifs, mais aussi leur origine — dans quelle mesure le Bénin est-il représenté dans les médias à l'international ?
+
+#### 7.2.7 Évolution du ton médiatique — GKG
+
 Le champ `V2Tone` du GKG est parsé en 6 dimensions (tone global, score positif, score négatif, polarité, activité, auto-référence). L'agrégation mensuelle révèle les périodes de couverture la plus négative et la plus positive, ainsi que les mois de forte polarité où les médias étaient émotionnellement divisés — même si le tone net semblait modéré.
 
-D'autre analyses détaillées répondant à des questions utiles à la décision sont présentent dans le notebook `visualisations_insights_gdeltevents.ipynb`
+D'autres analyses détaillées répondant à des questions utiles à la décision sont présentes dans le notebook `visualisations_insights_gdeltevents.ipynb`.
 
 ---
 
-## Analyse approfondir par le ML
+## 8. Analyse approfondie par le ML
 
 Les modèles de machine learning sont développés dans trois notebooks dédiés.
- 
-### Clustering K-Means — `notebooks/ml_clustering.ipynb`
- 
-Une première version du clustering est intégrée directement dans le notebook d'exploration comme preuve de concept puis dans le notebook `ml_clustering.ipynb`. Les événements sont regroupés en clusters homogènes à partir de quatre features numériques (`GoldsteinScale`, `AvgTone`, `NumMentions`, `NumSources`). Le nombre optimal de clusters est déterminé par la méthode du coude combinée au score de silhouette. Chaque cluster est ensuite profilé selon sa polarité moyenne (coopératif, conflictuel, mixte) et sa relation avec les catégories QuadClass.
 
- ### Classification — `notebooks/ml_classification.ipynb`
-Une première version du clustering est intégrée directement dans le notebook d'exploration comme preuve de concept puis dans le notebook `ml_classification.ipynb`. Il s'agit d'un modèle de classification des catégories d'évenements (QuardClass) basé sur quatre features numériques (`GoldsteinScale`, `AvgTone`, `NumMentions`, `NumSources`).
- 
-### Analyse de sentiment — `notebooks/ml_sentiment.ipynb`
- 
+### 8.1 Clustering K-Means — `notebooks/ml_clustering.ipynb`
+
+Une première version du clustering est intégrée directement dans le notebook d'exploration comme preuve de concept, puis développée dans `ml_clustering.ipynb`. Les événements sont regroupés en clusters homogènes à partir de quatre features numériques (`GoldsteinScale`, `AvgTone`, `NumMentions`, `NumSources`). Le nombre optimal de clusters est déterminé par la méthode du coude combinée au score de silhouette. Chaque cluster est ensuite profilé selon sa polarité moyenne (coopératif, conflictuel, mixte) et sa relation avec les catégories QuadClass.
+
+### 8.2 Classification — `notebooks/ml_classification.ipynb`
+
+Modèle de classification des catégories d'événements (QuadClass) basé sur quatre features numériques (`GoldsteinScale`, `AvgTone`, `NumMentions`, `NumSources`). Une première version est intégrée dans le notebook d'exploration comme preuve de concept, avant d'être formalisée dans `ml_classification.ipynb`.
+
+### 8.3 Analyse de sentiment — `notebooks/ml_sentiment.ipynb`
+
 Ce notebook construit deux modèles complémentaires d'analyse de sentiment à partir des features structurelles des événements GDELT.
- 
-**Modèle 1 — Régression AvgTone**
- 
+
+#### 8.3.1 Modèle 1 — Régression AvgTone
+
 Prédit la valeur numérique du tone médiatique d'un événement. Quatre algorithmes sont comparés : une baseline (prédiction de la moyenne), une régression Ridge, un Random Forest et un Gradient Boosting. La sélection du meilleur modèle repose sur le R² et le MAE. L'importance des features révèle quelles caractéristiques d'un événement sont les plus prédictives de sa couverture médiatique.
- 
-**Modèle 2 — Classification Sentiment**
- 
-Classifie chaque événement en trois catégories (positif, neutre, négatif) selon des seuils définis sur la distribution de `AvgTone` (seuils à ±2). Les mêmes quatre algorithmes sont comparés, évalués sur l'accuracy et le F1-macro (qui pénalise les classes ignorées). La classe `balanced` est appliquée pour gérer le déséquilibre naturel entre les catégories.
- 
-**Features utilisées**
- 
+
+#### 8.3.2 Modèle 2 — Classification Sentiment
+
+Classifie chaque événement en trois catégories (positif, neutre, négatif) selon des seuils définis sur la distribution de `AvgTone` (seuils à ±2). Les mêmes quatre algorithmes sont comparés, évalués sur l'accuracy et le F1-macro (qui pénalise les classes ignorées). La pondération `balanced` est appliquée pour gérer le déséquilibre naturel entre les catégories.
+
+#### 8.3.3 Features utilisées
+
 | Feature | Source | Rôle |
 |---------|--------|------|
 | `GoldsteinScale` | Events | Impact théorique de l'événement sur la stabilité |
@@ -305,22 +299,45 @@ Classifie chaque événement en trois catégories (positif, neutre, négatif) se
 | `NumArticles` | Events | Couverture totale |
 | `QuadClass` | Events | Grande catégorie de l'événement |
 | `EventRootCode` | Events | Type précis de l'action (CAMEO) |
- 
-**Modèles sauvegardés**
- 
-Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_analysis/`, `models/classification/`, `models/clustering/` pour être réutilisés directement par le dashboard Streamlit sans ré-entraînement.
 
-## Dashboard
-**Méthodologie et navigation du Dashboard**
+#### 8.3.4 Modèles sauvegardés
 
-Ce travail repose sur l’exploitation des bases de données GDELT (Events et GKG) pour analyser la couverture médiatique du Bénin sur l'année 2025. Le Dashboard permet de croiser le volume d'articles (mesuré par le nombre d'occurrences) avec la tonalité moyenne des récits, tout en distinguant les médias francophones/nationaux des médias internationaux. Pour une lecture optimale, l'utilisateur peut naviguer entre les tendances temporelles et les acteurs clés. Une fonctionnalité a été intégrée : en survolant simplement les points ou les barres du graphique, vous ferez apparaître le détail des types d'événements CAMEO associés, permettant ainsi de comprendre précisément quels faits (manifestations, accords diplomatiques, etc.) génèrent les pics d'activité. Les articles peuvent être lus en cliquant directement sur leurs adresses affichées dans le tableau. La carte renseigne sur la localisation de l'événement. 
+Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_analysis/`, `models/classification/` et `models/clustering/` pour être réutilisés directement sans ré-entraînement.
 
-**Analyse des résultats et crise de décembre**
+---
 
-L'analyse met en lumière une fracture lors du mois de décembre 2025. Alors que le graphique en mode "Count" révèle une explosion du volume de publications, le passage au graphique en "Moyenne de Tonalité" (Average Tone) montre une chute brutale de la tonalité, plongeant sous la barre des -5. Cette divergence confirme une crise médiatique majeure où l'intensité de l'information s'accompagne d'une forte négativité. On observe que si les médias internationaux maintiennent une certaine neutralité sur l'année, ils s'alignent sur la presse francophone en fin d'année, illustrant une dégradation généralisée de la perception des événements béninois à l'échelle mondiale.
+## 9. Dashboard
 
-Interface du dashboard
+🔗 **Dashboard en ligne :** [à compléter — lien Power BI / Streamlit]
+
+### 9.1 Méthodologie et navigation
+
+Ce travail repose sur l'exploitation des bases de données GDELT (Events et GKG) pour analyser la couverture médiatique du Bénin sur l'année 2025. Le dashboard permet de croiser le volume d'articles (mesuré par le nombre d'occurrences) avec la tonalité moyenne des récits, tout en distinguant les médias francophones/nationaux des médias internationaux.
+
+Pour une lecture optimale, l'utilisateur peut naviguer entre les tendances temporelles et les acteurs clés. En survolant les points ou les barres d'un graphique, le détail des types d'événements CAMEO associés apparaît, permettant de comprendre précisément quels faits (manifestations, accords diplomatiques, etc.) génèrent les pics d'activité. Les articles peuvent être lus en cliquant directement sur leurs adresses affichées dans le tableau. La carte renseigne sur la localisation des événements.
+
+### 9.2 Analyse des résultats — crise de décembre 2025
+
+L'analyse met en lumière une rupture au mois de décembre 2025. Alors que le graphique en mode "Count" révèle une explosion du volume de publications, le passage au mode "Moyenne de Tonalité" (Average Tone) montre une chute brutale de la tonalité, plongeant sous la barre des -5. Cette divergence confirme une crise médiatique majeure où l'intensité de l'information s'accompagne d'une forte négativité. On observe que si les médias internationaux maintiennent une certaine neutralité sur l'année, ils s'alignent sur la presse francophone en fin d'année, illustrant une dégradation généralisée de la perception des événements béninois à l'échelle mondiale.
+
+### 9.3 Interface
+
 ![Dashboard interface](dashboard/Dashboard.jpeg)
 
+---
 
-**PS:** L’intelligence artificielle a été utilisée de manière ciblée et réfléchie pour accélérer certaines étapes d’analyse, de structuration et de rédaction, tout en laissant l’interprétation et les arbitrages méthodologiques sous contrôle humain
+## 10. Insights clés
+
+
+1. **Le Bénin génère plus de couverture médiatique négative en fin d'année.** En décembre 2025, l'intérêt médiatique a atteint son pic, accompagné d'une tonalité médiatique particulièrement dégradée.
+2. **Il existe une forte internationalisation des acteurs lié à l'actualité béninoise**: 46,7 % des événements impliquent des acteurs étrangers
+3. **Le Borgou est le département le plus actif en événements géolocalisé.** Cependant le Borgou est aussi la zone répertorié d'office pour les évènements non localisé au Bénin
+4. **Il y a un décalage entre les faits et ce qui est perçu dans ce dataset.** La coopération verbale est le type d'évenement dominant, mais Dailypost (média le plus actif sur le Bénin) couvre majoritairement dans un registre négatif.
+
+---
+
+## 11. Usage de l'IA
+
+L'intelligence artificielle a été utilisée de manière ciblée et réfléchie pour accélérer certaines étapes d'analyse, de structuration et de rédaction — notamment la génération de code boilerplate, la correction syntaxique et l'aide à la formulation. L'interprétation des résultats, les choix méthodologiques et les arbitrages analytiques sont restés sous contrôle humain.
+
+*Conformément aux règles du hackathon iSHEERO × DataCamp Donates 2026.*
