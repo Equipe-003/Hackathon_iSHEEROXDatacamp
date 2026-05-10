@@ -304,6 +304,12 @@ Classifie chaque événement en trois catégories (positif, neutre, négatif) se
 
 Les modèles entraînés sont sérialisés en `.pkl` dans `models/sentiment_analysis/`, `models/classification/` et `models/clustering/` pour être réutilisés directement sans ré-entraînement.
 
+### 8.4 Analyse de sentiment grâce au NLP - `notebooks/nlp_analyse_ton_mediatique.ipynb`
+Pour compléter l'analyse des features structurelles GDELT, nous avons mis en place un pipeline NLP basé sur le modèle multilingue **cardiffnlp/twitter-xlm-roberta-base-sentiment (XLM-RoBERTa)**. Nous avons collecté 999 articles de presse via l'API GDELT DOC sur l'année 2025, filtrés géographiquement sur le Bénin. Chaque article a été enrichi par scraping léger de sa meta description HTML, construisant ainsi un texte combiné titre + description envoyé au modèle. L'inférence retourne un score de probabilité correspondant à la classe prédite (Négatif / Neutre / Positif) par article. Le dataset ayant servi à cette analyse est stocké ici : data/processed/articles_nlp_benin_2025.csv
+
+### Constat
+L'analyse du ton médiatique grâce au données structurel du champ AVGTone du dataset GKG avaient révélé une couverture négative dominante, avec un pic simultané de buzz et de négativité en décembre. Le mois d'Octobre etait quant à lui celui avec le ton médiatique centré sur le Bénin le plus positif. En explorant l'analyse par NLP des articles de presse on révèle cependant des contrastes marqués : octobre 2025 concentrent le pic de négativité le plus intense (polarité à −0.336), suggérant des événements à fort retentissement médiatique sur ce mois, tandis que décembre enregistre un retournement notable vers une couverture positive (polarité à +0.151). Le ton global reste aussi majoritairement neutre bien qu'étant tout de même plus proche d'un ton négatif que positif.
+
 ---
 
 ## 9. Dashboard
@@ -320,10 +326,19 @@ Pour une lecture optimale, l'utilisateur peut naviguer entre les tendances tempo
 
 L'analyse met en lumière une rupture au mois de décembre 2025. Alors que le graphique en mode "Count" révèle une explosion du volume de publications, le passage au mode "Moyenne de Tonalité" (Average Tone) montre une chute brutale de la tonalité, plongeant sous la barre des -5. Cette divergence confirme une crise médiatique majeure où l'intensité de l'information s'accompagne d'une forte négativité. On observe que si les médias internationaux maintiennent une certaine neutralité sur l'année, ils s'alignent sur la presse francophone en fin d'année, illustrant une dégradation généralisée de la perception des événements béninois à l'échelle mondiale.
 
-### 9.3 Interface
+### 9.3 Interface Power Bi
 
 ![Dashboard interface](dashboard/Dashboard.jpeg)
 
+### 9.4 Interface Streamlit
+
+![Dashboard interface_1](dashboard/Dashboard_1.png)
+
+![Dashboard interface_2](dashboard/Dashboard_2.png)
+
+![Dashboard interface_3](dashboard/Dashboard_3.png)
+
+![Dashboard interface_4](dashboard/Dashboard_4.png)
 ---
 
 ## 10. Insights clés
