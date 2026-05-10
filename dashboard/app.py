@@ -1,3 +1,5 @@
+import os
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -91,8 +93,16 @@ def load_data():
     df_cameo = load_cameo_codes()
 
     # ── Chargement brut ───────────────────────────────────────────────────────
-    df_ev  = pd.read_csv("gdelt_bn_2025.csv", low_memory=False)
-    df_gkg = pd.read_csv("gdelt_gkg_bn_V2Tone.csv", low_memory=False)
+    # Récupère le dossier où se trouve app.py
+    current_dir = os.path.dirname(__file__)
+    
+    # Construit le chemin complet vers les CSV
+    path_ev = os.path.join(current_dir, "gdelt_bn_2025.csv")
+    path_gkg = os.path.join(current_dir, "gdelt_gkg_bn_V2Tone.csv")
+    
+    # Lecture des fichiers
+    df_ev = pd.read_csv(path_ev, low_memory=False)
+    df_gkg = pd.read_csv(path_gkg, low_memory=False)
 
     # ── Nettoyage Events ──────────────────────────────────────────────────────
     # Colonnes numériques
