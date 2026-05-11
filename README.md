@@ -314,7 +314,7 @@ L'analyse du ton médiatique grâce au données structurel du champ AVGTone du d
 
 ## 9. Dashboard
 
-🔗 **Dashboard en ligne :** [à compléter — lien Streamlit]
+🔗 **Dashboard en ligne :** [https://equipe3-hackathonisheeroxdatacamp-3br9apjlm86ovwb2jgxbgr.streamlit.app/](https://equipe3-hackathonisheeroxdatacamp-3br9apjlm86ovwb2jgxbgr.streamlit.app/)
 
 ### 9.1 Méthodologie et navigation
 
