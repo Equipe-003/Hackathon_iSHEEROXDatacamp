@@ -49,7 +49,6 @@ Thumbs.db
 # ===== DONNÉES ET FICHIERS TEMPORAIRES =====
 *.tmp
 *.bak
-*.xlsx
 *.xls
 
 # ===== FICHIERS GÉNÉRÉS =====
