@@ -49,7 +49,6 @@ Thumbs.db
 # ===== DONNÉES ET FICHIERS TEMPORAIRES =====
 *.tmp
 *.bak
-*.xlsx
 *.xls
 
 # ===== FICHIERS GÉNÉRÉS =====
@@ -62,4 +61,5 @@ htmlcov/
 dashboard/output/
 dashboard/cache/
 models/checkpoints/
+gkg_2021_2026_cleaned/
 *.joblib
