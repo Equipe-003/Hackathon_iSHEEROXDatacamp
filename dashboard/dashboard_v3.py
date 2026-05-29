@@ -21,6 +21,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
+import zipfile
 
 # Imports pour prévisions
 from statsmodels.tsa.arima.model import ARIMA
@@ -97,45 +98,35 @@ st.markdown("""
 
 @st.cache_resource
 def load_data():
-    # 1. On se situe dans 'dashboard/', le dossier 'data' est juste à côté
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    # Plus besoin de '..', on accède directement à data/processed
     processed_dir = os.path.join(base_dir, 'data', 'processed')
 
-    # 2. Définition des chemins
-    files = {
-        'gkg': os.path.join(processed_dir, 'gkg_2021_2026_cleaned', 'gkg_2021_2026_cleaned.csv'),
-        'event': os.path.join(processed_dir, 'events_2021_2026_cleaned.csv'),
-        'project': os.path.join(processed_dir, 'Project_List_Cleaned_1.csv'),
-        'acled': os.path.join(processed_dir, 'acled_filtered_2021_2025.csv')
-    }
+    # Chemin vers le ZIP
+    zip_path = os.path.join(processed_dir, 'gkg_2021_2026_cleaned.zip')
 
-    # 3. Chargement
-    # Utilisation d'un dictionnaire pour charger les dataframes proprement
     try:
-        df_gkg = pd.read_csv(files['gkg'])
-        df_event = pd.read_csv(files['event'])
-        df_project = pd.read_csv(files['project'])
-        df_acled = pd.read_csv(files['acled'])
-    except FileNotFoundError as e:
-        st.error(f"Fichier introuvable : {e}")
+        # Ouverture du zip et lecture directe du CSV interne avec le nom exact
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            with z.open('gkg_2021_2026_cleaned.csv') as f:
+                df_gkg = pd.read_csv(f)
+        
+        # Chargement des autres fichiers normalement
+        df_event = pd.read_csv(os.path.join(processed_dir, 'events_2021_2026_cleaned.csv'))
+        df_project = pd.read_csv(os.path.join(processed_dir, 'Project_List_Cleaned_1.csv'))
+        df_acled = pd.read_csv(os.path.join(processed_dir, 'acled_filtered_2021_2025.csv'))
+        
+    except Exception as e:
+        st.error(f"Erreur lors du chargement des fichiers : {e}")
         return None, None, None, None
 
-    # 4. Conversion dates
+    # Conversion des dates
     df_event['SQLDATE'] = pd.to_datetime(df_event['SQLDATE'], format='%Y%m%d')
     df_project['Board Approval Date'] = pd.to_datetime(df_project['Board Approval Date'], errors='coerce')
     
-    # 5. Harmoniser colonne date ACLED
     if 'WEEK' in df_acled.columns:
         df_acled['EVENT_DATE'] = pd.to_datetime(df_acled['WEEK'], errors='coerce')
-    elif 'EVENT_DATE' not in df_acled.columns:
-        st.warning(" Colonne de date ACLED non trouvée")
     
     return df_gkg, df_event, df_project, df_acled
-
-# Charger les données
-with st.spinner('📊 Chargement des données...'):
-    df_gkg, df_event, df_project, df_acled = load_data()
 
 # Charger les données
 with st.spinner('📊 Chargement des données...'):
