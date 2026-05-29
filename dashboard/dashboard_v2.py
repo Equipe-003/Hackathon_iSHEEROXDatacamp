@@ -6,7 +6,7 @@ Combine les insights de:
 - INSIGHTS1.ipynb (Q1, Q2, Q3 avec analyse média + sécurité)
 - Benin_Economic_Governance_Analysis.ipynb (Q3, Q4)
 """
-
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -80,21 +80,29 @@ st.markdown("""
 
 @st.cache_resource
 def load_data():
-    """Charger tous les CSV avec cache"""
-    data_dir = Path('..') / 'data' / 'processed'
+    # 1. On se situe dans 'dashboard/', on remonte à la racine avec '..'
+    # Ensuite on descend dans 'data' puis 'processed'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    processed_dir = os.path.join(base_dir, '..', 'data', 'processed')
+
+    # 2. Définition des chemins
+    files = {
+        'gkg': os.path.join(processed_dir, 'gkg_2021_2026_cleaned', 'gkg_2021_2026_cleaned.csv'),
+        'event': os.path.join(processed_dir, 'events_2021_2026_cleaned.csv'),
+        'project': os.path.join(processed_dir, 'Project_List_Cleaned_1.csv'),
+        'acled': os.path.join(processed_dir, 'acled_filtered_2021_2025.csv')
+    }
+
+    # 3. Chargement
+    df_gkg = pd.read_csv(files['gkg'])
+    df_event = pd.read_csv(files['event'])
+    df_project = pd.read_csv(files['project'])
+    df_acled = pd.read_csv(files['acled'])
     
-    df_gkg = pd.read_csv(data_dir / 'gkg_2021_2026_cleaned' / 'gkg_2021_2026_cleaned.csv')
-    df_event = pd.read_csv(data_dir / 'events_2021_2026_cleaned.csv')
-    df_project = pd.read_csv(data_dir / 'Project_List_Cleaned _1.csv')
-    df_acled = pd.read_csv(data_dir / 'acled_filtered_2021_2025.csv')
-    
-    # Conversion dates
+    # 4. Transformations (ajustez selon vos colonnes réelles)
     df_event['SQLDATE'] = pd.to_datetime(df_event['SQLDATE'], format='%Y%m%d')
     df_project['Board Approval Date'] = pd.to_datetime(df_project['Board Approval Date'], errors='coerce')
     df_acled['WEEK'] = pd.to_datetime(df_acled['WEEK'], errors='coerce')
-
-    # Si vous utilisez EVENT_DATE ailleurs dans le code, 
-    # il est préférable de renommer la colonne dès le chargement :
     df_acled = df_acled.rename(columns={'WEEK': 'EVENT_DATE'})
     
     return df_gkg, df_event, df_project, df_acled
