@@ -80,10 +80,10 @@ st.markdown("""
 
 @st.cache_resource
 def load_data():
-    # 1. On se situe dans 'dashboard/', on remonte à la racine avec '..'
-    # Ensuite on descend dans 'data' puis 'processed'
+    # 1. On se situe dans 'dashboard/', le dossier 'data' est juste à côté
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    processed_dir = os.path.join(base_dir, '..', 'data', 'processed')
+    # Plus besoin de '..', on accède directement à data/processed
+    processed_dir = os.path.join(base_dir, 'data', 'processed')
 
     # 2. Définition des chemins
     files = {
@@ -94,16 +94,25 @@ def load_data():
     }
 
     # 3. Chargement
-    df_gkg = pd.read_csv(files['gkg'])
-    df_event = pd.read_csv(files['event'])
-    df_project = pd.read_csv(files['project'])
-    df_acled = pd.read_csv(files['acled'])
-    
-    # 4. Transformations (ajustez selon vos colonnes réelles)
+    # Utilisation d'un dictionnaire pour charger les dataframes proprement
+    try:
+        df_gkg = pd.read_csv(files['gkg'])
+        df_event = pd.read_csv(files['event'])
+        df_project = pd.read_csv(files['project'])
+        df_acled = pd.read_csv(files['acled'])
+    except FileNotFoundError as e:
+        st.error(f"Fichier introuvable : {e}")
+        return None, None, None, None
+
+    # 4. Conversion dates
     df_event['SQLDATE'] = pd.to_datetime(df_event['SQLDATE'], format='%Y%m%d')
     df_project['Board Approval Date'] = pd.to_datetime(df_project['Board Approval Date'], errors='coerce')
-    df_acled['WEEK'] = pd.to_datetime(df_acled['WEEK'], errors='coerce')
-    df_acled = df_acled.rename(columns={'WEEK': 'EVENT_DATE'})
+    
+    # 5. Harmoniser colonne date ACLED
+    if 'WEEK' in df_acled.columns:
+        df_acled['EVENT_DATE'] = pd.to_datetime(df_acled['WEEK'], errors='coerce')
+    elif 'EVENT_DATE' not in df_acled.columns:
+        st.warning("⚠️ Colonne de date ACLED non trouvée")
     
     return df_gkg, df_event, df_project, df_acled
 

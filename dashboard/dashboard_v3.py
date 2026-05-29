@@ -67,7 +67,7 @@ st.markdown("""
         margin: 10px 0;
     }
     .warning-box {
-        background: #decdff;
+        background: #161517;
         padding: 15px;
         border-left: 4px solid #ff9800;
         border-radius: 5px;
@@ -97,8 +97,10 @@ st.markdown("""
 
 @st.cache_resource
 def load_data():
+    # 1. On se situe dans 'dashboard/', le dossier 'data' est juste à côté
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    processed_dir = os.path.join(base_dir, '..', 'data', 'processed')
+    # Plus besoin de '..', on accède directement à data/processed
+    processed_dir = os.path.join(base_dir, 'data', 'processed')
 
     # 2. Définition des chemins
     files = {
@@ -109,22 +111,31 @@ def load_data():
     }
 
     # 3. Chargement
-    df_gkg = pd.read_csv(files['gkg'])
-    df_event = pd.read_csv(files['event'])
-    df_project = pd.read_csv(files['project'])
-    df_acled = pd.read_csv(files['acled'])
-    
-    # Conversion dates
+    # Utilisation d'un dictionnaire pour charger les dataframes proprement
+    try:
+        df_gkg = pd.read_csv(files['gkg'])
+        df_event = pd.read_csv(files['event'])
+        df_project = pd.read_csv(files['project'])
+        df_acled = pd.read_csv(files['acled'])
+    except FileNotFoundError as e:
+        st.error(f"Fichier introuvable : {e}")
+        return None, None, None, None
+
+    # 4. Conversion dates
     df_event['SQLDATE'] = pd.to_datetime(df_event['SQLDATE'], format='%Y%m%d')
     df_project['Board Approval Date'] = pd.to_datetime(df_project['Board Approval Date'], errors='coerce')
     
-    # Harmoniser colonne date ACLED
+    # 5. Harmoniser colonne date ACLED
     if 'WEEK' in df_acled.columns:
         df_acled['EVENT_DATE'] = pd.to_datetime(df_acled['WEEK'], errors='coerce')
     elif 'EVENT_DATE' not in df_acled.columns:
-        st.warning("⚠️ Colonne de date ACLED non trouvée")
+        st.warning(" Colonne de date ACLED non trouvée")
     
     return df_gkg, df_event, df_project, df_acled
+
+# Charger les données
+with st.spinner('📊 Chargement des données...'):
+    df_gkg, df_event, df_project, df_acled = load_data()
 
 # Charger les données
 with st.spinner('📊 Chargement des données...'):
@@ -134,7 +145,7 @@ with st.spinner('📊 Chargement des données...'):
 # 2. SIDEBAR - FILTRES
 # ============================================================================
 
-st.sidebar.markdown("## 🎛️ FILTRES")
+st.sidebar.markdown("## FILTRES")
 st.sidebar.markdown("---")
 
 # Filtre temporel
@@ -173,8 +184,8 @@ df_project_filtered = df_project[
 st.sidebar.markdown("---")
 st.sidebar.markdown("## 🔍 OPTIONS")
 
-show_security = st.sidebar.checkbox("🔒 Inclure impact sécurité (ACLED)", value=True)
-show_projections = st.sidebar.checkbox("🔮 Afficher projections ARIMA", value=True)
+show_security = st.sidebar.checkbox(" Inclure impact sécurité (ACLED)", value=True)
+show_projections = st.sidebar.checkbox(" Afficher projections ARIMA", value=True)
 
 # ============================================================================
 # 3. HEADER
@@ -197,7 +208,7 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     total_articles = df_event_filtered['NumArticles'].sum()
     st.metric(
-        "📰 Articles GDELT",
+        " Articles GDELT",
         f"{total_articles:,.0f}",
         f"+{total_articles / max(len(df_event_filtered), 1):.0f} /événement"
     )
@@ -206,7 +217,7 @@ with col2:
     avg_tone = df_event_filtered['AvgTone'].mean()
     tone_color = "🟢" if avg_tone > 0 else "🔴" if avg_tone < 0 else "⚪"
     st.metric(
-        "🎯 Tone GDELT Moyen",
+        " Tone GDELT Moyen",
         f"{avg_tone:.3f}",
         f"{tone_color} {'Positif' if avg_tone > 0 else 'Négatif'}"
     )
@@ -214,7 +225,7 @@ with col2:
 with col3:
     total_ide = df_project_filtered['IDA Commitment $US'].sum() / 1e9
     st.metric(
-        "💰 IDE Total (IDA)",
+        " IDE Total (IDA)",
         f"${total_ide:.2f}B",
         f"{len(df_project_filtered)} projets"
     )
@@ -222,7 +233,7 @@ with col3:
 with col4:
     security_events = len(df_acled_filtered) if show_security and len(df_acled_filtered) > 0 else 0
     st.metric(
-        "🔒 Incidents Sécurité (ACLED)",
+        " Incidents Sécurité (ACLED)",
         f"{security_events}",
         "En période d'analyse" if show_security else "Désactivé"
     )
@@ -234,11 +245,11 @@ st.markdown("---")
 # ============================================================================
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊 Q1: Perception Internationale",
-    "🔗 Q2: Médias vs IDE (+ Sécurité)",
-    "🏭 Q3: Perception Secteurs",
-    "📈 Q4: Hype vs Reality",
-    "🔮 Projections ARIMA 2026-2028"
+    "Q1: Perception Internationale",
+    "Q2: Médias vs IDE (+ Sécurité)",
+    "Q3: Perception Secteurs",
+    "Q4: Hype vs Reality",
+    "Projections ARIMA 2026-2028"
 ])
 
 # ============================================================================
@@ -246,7 +257,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ============================================================================
 
 with tab1:
-    st.subheader("📊 Comment l'économie du Bénin est perçue à l'international ?")
+    st.subheader(" Comment l'économie du Bénin est perçue à l'international ?")
     
     col1, col2 = st.columns([3, 1])
     
@@ -292,7 +303,7 @@ with tab1:
     
     with col2:
         # Statistics
-        st.markdown("#### 📈 Statistiques")
+        st.markdown("#### Statistiques")
         st.markdown(f"""
         **Période:** {date_range[0]} → {date_range[1]}
         
@@ -308,14 +319,17 @@ with tab1:
         """)
     
     # Insight
-    st.markdown("#### 💡 Insight Q1")
+    st.markdown("#### Insight Q1")
     st.markdown("""
     Le tone GDELT reflète la perception médiatique internationale du Bénin. 
     Une valeur positive indique une couverture favorable, une valeur négative 
     pointe des préoccupations (sécurité, stabilité, économie). 
     
-    **Interprétation :** Plus le Bénin attire l'attention positive des médias 
-    mondiaux, plus cela peut bénéficier à la confiance des investisseurs.
+    **Interprétation :** Une visibilité massive mais structurellement critique Volume d’articles (278 023) : Le Bénin n'est pas invisible. C’est le premier enseignement majeur pour un nouveau gouvernement : avec plus de 200 000 articles économiques internationaux analysés, le Bénin génère un flux d'intérêt réel à l'échelle mondiale. Sa diplomatie économique et ses réformes structurelles captent l'attention des marchés. 
+    Le pays est installé sur le radar des investisseurs.
+    
+    Une moyenne globale légèrement négative est tout à fait standard dans les bases de données GDELT mondiales. La presse internationale sursaute plus vite sur les risques (inflation globale, tensions sécuritaires au Sahel, logistique) que sur les réussites quotidiennes.
+    Cependant, cette valeur de -0,54 sert de ligne de base (Baseline) : tout période situé au-dessus est une victoire réputationnelle ; toute période situé en dessous est une alerte.
     """)
 
 # ============================================================================
@@ -387,24 +401,19 @@ with tab2:
     
     with col2:
         # Insights texte
-        st.markdown("#### 📊 Résultats Clés (INSIGHTS1)")
+        st.markdown("#### Résultats Clés (INSIGHTS1)")
         st.markdown("""
         **Médias Internationaux vs IDE:**
-        - Corrélation: `+0.18` ✅
+        - Faible Corrélation: `+0.18` ✅
         - Relation positive avec décalage 6 mois
-        - Les articles positifs → IDE augmente
-        
-        **Médias Nationaux vs IDE:**
-        - Corrélation: `-0.22` ⚠️
-        - Relation négative (paradoxe)
-        - Débats locaux ≠ décisions investisseurs
+        - Les articles positifs impacte dans une infirme proportion les IDE approuvés 6 mois plus tard
         """)
     
     # ========== SECTION ACLED - Impact Sécurité ==========
     
     if show_security and len(df_acled_filtered) > 0:
         st.markdown("---")
-        st.subheader("🔒 Impact Sécurité (ACLED) sur IDE - Analyse avec Lag 6 Mois")
+        st.subheader(" Impact Sécurité (ACLED) sur IDE - Analyse avec Lag 6 Mois")
         
         # Préparer données ACLED
         df_acled_monthly = df_acled[df_acled['EVENT_DATE'].notna()].copy()
@@ -527,12 +536,12 @@ with tab2:
             st.plotly_chart(fig_scatter_acled, use_container_width=True)
         
         # Insights ACLED
-        st.markdown("#### 💡 Insight Sécurité (ACLED)")
+        st.markdown("#### Insight Sécurité (ACLED)")
         
         if corr_acled_ide < -0.10:
             st.markdown(f"""
             <div class="warning-box">
-            ⚠️ <b>Impact Négatif Détecté:</b> Corrélation ACLED→IDE = <code>{corr_acled_ide:.3f}</code>
+             <b>Impact Négatif Détecté:</b> Corrélation ACLED→IDE = <code>{corr_acled_ide:.3f}</code>
             
             **Interpretation:**
             - Plus il y a d'incidents sécuritaires un mois donné
@@ -551,7 +560,7 @@ with tab2:
     
     else:
         if show_security:
-            st.info("ℹ️ Aucune donnée ACLED pour la période sélectionnée.")
+            st.info(" Aucune donnée ACLED pour la période sélectionnée.")
 
 # ============================================================================
 # TAB 3: Q3 - PERCEPTION PAR SECTEUR
@@ -660,7 +669,7 @@ with tab3:
         st.plotly_chart(fig_bubble, use_container_width=True)
     
     # Tableau détaillé
-    st.markdown("#### 📋 Détails secteur")
+    st.markdown("#### Détails secteur")
     st.dataframe(
         sector_stats.sort_values('Articles', ascending=False).style.format({
             'Tone': '{:.3f}',
@@ -676,7 +685,7 @@ with tab3:
 # ============================================================================
 
 with tab4:
-    st.subheader("📈 Hype vs Reality: Secteurs overhypés ?")
+    st.subheader(" Attente vs Realité: Secteurs surestimé ?")
     
     # Calculer hype index (articles per project)
     project_sectors = df_project.copy()
@@ -689,7 +698,7 @@ with tab4:
         }).reset_index()
         project_by_sector.columns = ['Sector', 'Project_Count', 'Investment']
     else:
-        st.warning("⚠️ Colonne 'Secteur' non trouvée. Affichage global.")
+        st.warning(" Colonne 'Secteur' non trouvée. Affichage global.")
         project_by_sector = pd.DataFrame({
             'Sector': ['All Projects'],
             'Project_Count': [len(project_sectors)],
@@ -770,7 +779,7 @@ with tab4:
         st.plotly_chart(fig_scatter, use_container_width=True)
     
     # Insight
-    st.markdown("#### 💡 Insight Q4")
+    st.markdown("#### Insight Q4")
     
     top_hype = hype_comparison.nlargest(1, 'Hype_Index').iloc[0]
     
@@ -781,7 +790,7 @@ with tab4:
     - Hype Index: `{top_hype['Hype_Index']:.0f}` articles/projet
     
     **Implication:** 
-    - ⚠️ Attention aux secteurs avec fort buzz médiatique mais peu de projets
+    - Attention aux secteurs avec fort buzz médiatique mais avec peu de projets
     - Risque de déception vs attentes (media hype ≠ deliverables)
     - Prioriser secteurs avec ratio articles/projets équilibré
     """)
@@ -792,7 +801,7 @@ with tab4:
 
 with tab5:
     if show_projections:
-        st.subheader("🔮 Projections 2026-2028: ARIMA + Analyse Scénarios")
+        st.subheader(" Projections 2026-2028: ARIMA + Analyse Scénarios")
         
         # Préparer les séries temporelles
         df_event_monthly = df_event.copy()
@@ -812,19 +821,19 @@ with tab5:
         ide_ts = ide_ts.asfreq('MS', fill_value=0)
         
         # Onglets projections
-        proj_tab1, proj_tab2 = st.tabs(["📊 Projections ARIMA", "🎬 Scénarios Dynamiques"])
+        proj_tab1, proj_tab2 = st.tabs([" Projections ARIMA", " Scénarios Dynamiques"])
         
         with proj_tab1:
             st.markdown("#### Modèle: ARIMA - Auto-regressive Integrated Moving Average")
             st.markdown("""
             **Avantages:**
-            - ✅ Capture tendances et saisonnalité
-            - ✅ Basé sur données historiques observées
-            - ✅ Intervalles de confiance pour incertitude
+            - Capture tendances et saisonnalité
+            - Basé sur données historiques observées
+            - Intervalles de confiance pour incertitude
             
             **Limitations:**
-            - ⚠️ Assume pattern passé continue (pas de choc externe)
-            - ⚠️ Moins robuste avec peu de données
+            - Assume pattern passé continue (pas de choc externe)
+            - Moins robuste avec peu de données
             """)
             
             col1, col2 = st.columns(2)
@@ -895,10 +904,10 @@ with tab5:
                         - Forecast 2026-2028: Tone moyen `{forecast_tone_df['point_forecast'].mean():.3f}`
                         """)
                     else:
-                        st.warning("⚠️ Données insuffisantes pour ARIMA (min 12 mois)")
+                        st.warning(" Données insuffisantes pour ARIMA (min 12 mois)")
                 
                 except Exception as e:
-                    st.error(f"❌ Erreur ARIMA Tone: {str(e)}")
+                    st.error(f" Erreur ARIMA Tone: {str(e)}")
             
             with col2:
                 st.markdown("**Projection IDE (IDA)**")
@@ -974,7 +983,7 @@ with tab5:
                         st.warning("⚠️ Données insuffisantes pour ARIMA IDE")
                 
                 except Exception as e:
-                    st.error(f"❌ Erreur ARIMA IDE: {str(e)}")
+                    st.error(f" Erreur ARIMA IDE: {str(e)}")
         
         with proj_tab2:
             st.markdown("#### 🎬 Scénarios Dynamiques (Sensibilité)")
@@ -983,14 +992,14 @@ with tab5:
             
             with col1:
                 scenario_security = st.slider(
-                    "🔒 Amélioration Sécurité",
+                    " Amélioration Sécurité",
                     0, 100, 50,
                     help="0%=Status quo, 100%=Amélioration complète"
                 )
             
             with col2:
                 scenario_communication = st.slider(
-                    "📢 Amélioration Communication",
+                    " Amélioration Communication",
                     0, 100, 50,
                     help="Renforcement stratégie média internationale"
                 )
@@ -1079,20 +1088,20 @@ with tab5:
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.metric("📊 Tone Baseline", f"{baseline_tone:.3f}", 
+                st.metric(" Tone Baseline", f"{baseline_tone:.3f}", 
                          f"{tone_delta:.3f}",  delta_color="inverse" if tone_delta < 0 else "normal")
             
             with col2:
-                st.metric("🔮 Tone 2028", f"{projected_tone[-1]:.3f}",
+                st.metric(" Tone 2028", f"{projected_tone[-1]:.3f}",
                          f"{projected_tone[-1] - baseline_tone:+.3f}", 
                          delta_color="inverse" if (projected_tone[-1] - baseline_tone) < 0 else "normal")
             
             with col3:
-                st.metric("💰 IDE Baseline", f"${baseline_ide/1e9:.2f}B", 
+                st.metric(" IDE Baseline", f"${baseline_ide/1e9:.2f}B", 
                          "Référence")
             
             with col4:
-                st.metric("🔮 IDE 2028", f"${projected_ide[-1]/1e9:.2f}B",
+                st.metric(" IDE 2028", f"${projected_ide[-1]/1e9:.2f}B",
                          f"{(projected_ide[-1] / max(baseline_ide, 1e6) - 1)*100:+.0f}%",
                          delta_color="normal" if projected_ide[-1] >= baseline_ide else "inverse")
     
@@ -1106,7 +1115,7 @@ with tab5:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #999; font-size: 0.85em;'>
-    <p>📊 Dashboard Bénin Economic Governance | Hackathon iSHEERO × DataCamp 2026</p>
+    <p> Dashboard Bénin Economic Governance | Hackathon iSHEERO × DataCamp 2026</p>
     <p>Données: GDELT, GKG, Project_List (World Bank), ACLED | Période: 2021-2026</p>
     <p><em>Les prévisions ARIMA sont basées sur les patterns historiques. Les résultats réels peuvent différer.</em></p>
     <p><b>ACLED Impact:</b> Corrélation calculée avec décalage 6 mois (t+6)</p>
