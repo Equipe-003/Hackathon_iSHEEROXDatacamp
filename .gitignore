@@ -63,5 +63,4 @@ htmlcov/
 dashboard/output/
 dashboard/cache/
 models/checkpoints/
-gkg_2021_2026_cleaned/
 *.joblib
