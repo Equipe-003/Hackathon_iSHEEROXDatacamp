@@ -33,7 +33,7 @@ from scipy import stats
 # ============================================================================
 
 st.set_page_config(
-    page_title="Bénin Economic Governance Dashboard",
+    page_title="Benin Insights",
     page_icon="🇧🇯",
     layout="wide",
     initial_sidebar_state="expanded"
