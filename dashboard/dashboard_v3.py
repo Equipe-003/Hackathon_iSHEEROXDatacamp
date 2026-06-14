@@ -68,7 +68,7 @@ st.markdown("""
         margin: 10px 0;
     }
     .warning-box {
-        background: #161517;
+        background: #9c97a1;
         padding: 15px;
         border-left: 4px solid #ff9800;
         border-radius: 5px;
@@ -184,8 +184,7 @@ show_projections = st.sidebar.checkbox(" Afficher projections ARIMA", value=True
 
 st.markdown("""
 # 🇧🇯 Bénin Economic Governance Dashboard
-## 2021-2026 | Analyse Perception Médiatique & Investissements IDE
-*Hackathon iSHEERO × DataCamp - Bénin Insights Challenge*
+## 2021-2026 | Analyse Perception Médiatique & Investissements Direct Extérieur (IDE)
 """)
 
 st.markdown("---")
@@ -236,10 +235,10 @@ st.markdown("---")
 # ============================================================================
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Q1: Perception Internationale",
-    "Q2: Médias vs IDE (+ Sécurité)",
-    "Q3: Perception Secteurs",
-    "Q4: Hype vs Reality",
+    "Perception Internationale",
+    "Médias vs IDE (+ Sécurité)",
+    "Perception Secteurs",
+    "Hype vs Reality",
     "Projections ARIMA 2026-2028"
 ])
 
@@ -310,7 +309,7 @@ with tab1:
         """)
     
     # Insight
-    st.markdown("#### Insight Q1")
+    st.markdown("#### Que comprendre ?")
     st.markdown("""
     Le tone GDELT reflète la perception médiatique internationale du Bénin. 
     Une valeur positive indique une couverture favorable, une valeur négative 
@@ -328,7 +327,7 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.subheader("🔗 Corrélation: Médias International/National & IDE")
+    st.subheader("🔗 Corrélation: Perception Médiatique International/National & IDE")
     
     # Agrégation mensuelle pour corrélation
     df_event_monthly = df_event_filtered.copy()
@@ -392,7 +391,7 @@ with tab2:
     
     with col2:
         # Insights texte
-        st.markdown("#### Résultats Clés (INSIGHTS1)")
+        st.markdown("#### Résultats Clés")
         st.markdown("""
         **Médias Internationaux vs IDE:**
         - Faible Corrélation: `+0.18` ✅
@@ -404,7 +403,7 @@ with tab2:
     
     if show_security and len(df_acled_filtered) > 0:
         st.markdown("---")
-        st.subheader(" Impact Sécurité (ACLED) sur IDE - Analyse avec Lag 6 Mois")
+        st.subheader(" Analyse de l'impact sécuritaire sur les IDE - Analyse avec Lag 6 Mois")
         
         # Préparer données ACLED
         df_acled_monthly = df_acled[df_acled['EVENT_DATE'].notna()].copy()
