@@ -183,7 +183,7 @@ show_projections = st.sidebar.checkbox(" Afficher projections ARIMA", value=True
 # ============================================================================
 
 st.markdown("""
-# 🇧🇯 Bénin Economic Governance Dashboard
+# 🇧🇯 Benin Insights
 ## 2021-2026 | Analyse Perception Médiatique & Investissements Direct Extérieur (IDE)
 """)
 
