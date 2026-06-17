@@ -1,0 +1,743 @@
+---
+title: "Analyses et visualisations GDELT"
+format: html
+editor: visual
+jupyter: python3
+---
+
+```{python}
+#| echo: false
+!pip install gdeltdoc
+```
+
+```{python}
+#| echo: false
+import pandas as pd
+```
+
+Les analyses effectuées ont porté sur cinq questions de recherche:
+
+-   Quels sont les 50 médias qui parlent le plus du Bénin dans le monde?
+
+-   A quel moment de l'année le ton de l'actualité sur le Bénin  ètait-il le plus négatif, le plus positif?  sur quels sujets? 
+
+-   A quel moment le Bénin a il le plus fait parlé de lui (buzzé) dans le monde? 
+
+-   Quels sont les 10 sujets qui ont eu le plus grand buzz au cours de l'année?
+
+-   Parmis les 4 grandes catégories d'événements, lequel est le plus représsenté parmis les événements concernant le Bénin pour chaque mois?  
+
+# les 50 médias qui parlent le plus du Bénin dans le monde
+
+```{python}
+#| echo: false
+df=pd.read_csv("../data/gdelt_bn_2025.csv")
+pd.set_option('display.max_columns', None)
+```
+
+```{python}
+#| echo: false
+# filtre sur les lignes concernant Benin City
+search_string = 'edo|ekpoma|benin city'
+
+df_filtre = df[~(
+    df['Actor1Geo_FullName'].fillna('').str.contains(search_string, case=False, na=False) |
+    df['Actor2Geo_FullName'].fillna('').str.contains(search_string, case=False, na=False)
+)]
+
+print(f"Le DataFrame a été filtré. Nombre de lignes restantes : {len(df)}")
+```
+
+```{python}
+#| echo: false
+import re
+import plotly.express as px
+
+# Fonction pour extraire le domaine de base d'une URL
+def get_base_domain(url):
+    try:
+        # Supprimer le protocole (http/https) et le préfixe 'www.'
+        domain = re.sub(r'^(https?://)?(www\.)?', '', url.lower())
+        # Garder uniquement la partie avant le premier '/' si elle existe
+        domain = domain.split('/')[0]
+        return domain
+    except:
+        return None
+
+# Appliquer la fonction pour créer une nouvelle colonne 'MediaSource'
+df_filtre['MediaSource'] = df_filtre['SOURCEURL'].apply(get_base_domain)
+
+# Compter les occurrences pour chaque source médiatique
+media_counts = df_filtre['MediaSource'].value_counts().reset_index()
+media_counts.columns = ['MediaSource', 'Mentions']
+
+# Obtenir les 50 principales sources médiatiques et créer explicitement une copie pour éviter SettingWithCopyWarning
+top_50_media = media_counts.head(50).copy()
+
+# Calculer la 'part' (pourcentage)
+top_50_media['Part'] = (top_50_media['Mentions'] / top_50_media['Mentions'].sum()) * 100
+
+print("Top 50 des médias qui parlent le plus du Bénin :")
+print(top_50_media[['MediaSource', 'Mentions', 'Part']])
+
+# Créer un Treemap
+fig = px.treemap(
+    top_50_media,
+    path=['MediaSource'],
+    values='Mentions',
+    title='Distribution des Mentions du Bénin par Média (Top 50)',
+    color='Part',
+    color_continuous_scale='Blues',
+    hover_data={'MediaSource':True, 'Mentions':True, 'Part':':.2f%'} # Afficher la part avec 2 décimales
+)
+
+fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+fig.show()
+
+```
+
+## Analyse des thématiques liées au top 10 des médias
+
+```{python}
+#| echo: false
+# Obtenir la liste des 10 premières sources médiatiques
+top_10_media_names = top_50_media['MediaSource'].head(10).tolist()
+
+# Filtrer df_benin pour inclure uniquement les événements de ces 10 médias
+df_top10_media = df_filtre[df_filtre['MediaSource'].isin(top_10_media_names)].copy()
+
+# Analyse des thématiques via QuadClass et AvgTone
+print("\nAnalyse thématique pour le top 10 des médias :")
+
+# Distribution de QuadClass (type d'événement)
+quadclass_distribution = df_top10_media['QuadClass'].value_counts(normalize=True).mul(100).round(2).sort_index()
+print("\nDistribution des types d'événements (QuadClass) :")
+# Mapping des valeurs QuadClass vers des descriptions plus lisibles
+quadclass_map = {
+    1: 'Coopération Verbale',
+    2: 'Coopération Matérielle',
+    3: 'Conflit Verbal',
+    4: 'Conflit Matériel'
+}
+quadclass_distribution.index = quadclass_distribution.index.map(quadclass_map)
+
+# Renommer l'index pour qu'il devienne une colonne nommée 'QuadClass'
+quadclass_distribution = quadclass_distribution.reset_index()
+quadclass_distribution.columns = ['QuadClass', 'proportion']
+
+print(quadclass_distribution.to_string())
+
+# Tonalité moyenne globale des articles de ces médias
+average_tone_top10 = df_top10_media['AvgTone'].mean()
+print(f"\nTonalité moyenne générale des articles du top 10 des médias : {average_tone_top10:.2f}")
+
+# Tonalité moyenne par média du top 10
+tone_by_media = df_top10_media.groupby('MediaSource')['AvgTone'].mean().sort_values(ascending=False)
+print("\nTonalité moyenne par média (Top 10) :")
+print(tone_by_media.to_string())
+
+# GoldsteinScale moyenne par média du top 10
+goldstein_by_media = df_top10_media.groupby('MediaSource')['GoldsteinScale'].mean().sort_values(ascending=False)
+print("\nGoldsteinScale moyenne par média (Top 10) :")
+print(goldstein_by_media.to_string())
+
+# Visualisation de la distribution des types d'événements (QuadClass)
+fig_quadclass = px.bar(
+    quadclass_distribution,
+    x='QuadClass',
+    y='proportion',
+    title='Distribution des types d\'événements (QuadClass) par le Top 10 des Médias',
+    labels={'QuadClass': 'Type d\'événement', 'proportion': 'Pourcentage (%)'},
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+fig_quadclass.show()
+
+# Visualisation de la tonalité moyenne par média
+fig_tone = px.bar(
+    tone_by_media.reset_index(),
+    x='MediaSource',
+    y='AvgTone',
+    title='Tonalité Moyenne des Articles par Média (Top 10)',
+    labels={'MediaSource': 'Média', 'AvgTone': 'Tonalité Moyenne'},
+    color='AvgTone',
+    color_continuous_scale='RdBu_r'
+)
+fig_tone.show()
+
+# Visualisation de la GoldsteinScale moyenne par média
+fig_goldstein = px.bar(
+    goldstein_by_media.reset_index(),
+    x='MediaSource',
+    y='GoldsteinScale',
+    title='GoldsteinScale Moyenne des Articles par Média (Top 10)',
+    labels={'MediaSource': 'Média', 'GoldsteinScale': 'GoldsteinScale Moyenne'},
+    color='GoldsteinScale',
+    color_continuous_scale='RdBu'
+)
+fig_goldstein.show()
+```
+
+Nous avons exploré les types d'événements et la tonalité des articles provenant des 10 principaux médias qui couvrent le Bénin pour mieux comprendre comment le pays est représenté dans le paysage médiatique.
+
+Comme le montre notre graphique, la majorité des événements rapportés se concentrent sur la **Coopération Verbale** (63.56%). La couverture médiatique est largement orientée vers les discussions, les déclarations, les négociations et les accords pacifiques concernant le Bénin. La **Coopération Matérielle** (9.25%) est également présente, bien que dans une moindre mesure. En revanche, les événements liés aux conflits, qu'ils soient **Verbaux** (12.97%) ou **Matériels** (14.22%), représentent une part significative, mais minoritaire.
+
+La **tonalité moyenne générale** des articles de ce top 10 des médias est légèrement négative avec une moyenne de **-2.04**. Cela pourrait impliquer que, malgré la prédominance de la coopération verbale, les sujets abordés ou la manière de les traiter tendent à être empreints de critiques ou de préoccupationsn évoqués avec une certaine prudence, .
+
+En examinant la tonalité moyenne par média, nous constatons des variations notables :
+
+-   **Le plus positif :** nigerianobservernews.com (1.02) se démarque par une couverture généralement positive
+-   **Le plus négatif :** saharareporters.com (-4.52) présente la tonalité la plus négative, indiquant une approche plus critique ou axée sur les problèmes.
+
+Ces différences soulignent l'importance de considérer la source de l'information pour comprendre la perspective adoptée.
+
+**GoldsteinScale** évalue l'intensité de la coopération ou du conflit. Des valeurs positives indiquent une tendance coopérative, tandis que des valeurs négatives indiquent le contraire
+
+-   lanouvelletribune.info (1.56) et nigerianobservernews.com (1.54) affichent les scores les plus élevés, signalant une forte orientation vers des événements coopératifs.
+-   D'autres médias comme dailypost.ng (-0.42) et punchng.com (-0.09) ont des scores légèrement négatifs, reflétant une couverture incluant davantage d'événements conflictuels.
+
+En résumé, l'analyse révèle un paysage médiatique dominé par les discussions et la coopération, mais avec une tonalité générale prudente et des variations significatives entre les sources. Cela met en lumière la complexité de la perception du Bénin dans les médias régionaux et internationaux.
+
+# Analyse du ton de l'actualité sur le Bénin dans le temps?
+
+```{python}
+#| echo: false
+import pandas as pd
+import plotly.express as px
+
+# Convertir SQLDATE en format de date si ce n'est pas déjà fait
+df_filtre['SQLDATE_DATE'] = pd.to_datetime(df_filtre['SQLDATE'], format='%Y%m%d')
+
+# Extraire le mois et le nom du mois
+df_filtre['Month'] = df_filtre['SQLDATE_DATE'].dt.month
+df_filtre['MonthName'] = df_filtre['SQLDATE_DATE'].dt.strftime('%B')
+
+# Calculer la tonalité moyenne par mois
+tone_by_month = df_filtre.groupby(['Month', 'MonthName'])['AvgTone'].mean().reset_index()
+tone_by_month = tone_by_month.sort_values('Month')
+
+# Identifier le mois le plus positif et le plus négatif
+most_positive_month = tone_by_month.loc[tone_by_month['AvgTone'].idxmax()]
+most_negative_month = tone_by_month.loc[tone_by_month['AvgTone'].idxmin()]
+
+print(f"Le mois le plus positif en termes de tonalité moyenne est : {most_positive_month['MonthName']} ({most_positive_month['AvgTone']:.2f})")
+print(f"Le mois le plus négatif en termes de tonalité moyenne est : {most_negative_month['MonthName']} ({most_negative_month['AvgTone']:.2f})")
+
+# Créer une courbe d'évolution de la tonalité moyenne
+fig = px.line(
+    tone_by_month,
+    x='MonthName',
+    y='AvgTone',
+    title='Évolution de la Tonalité Moyenne de l\'Actualité sur le Bénin par Mois',
+    labels={'MonthName': 'Mois', 'AvgTone': 'Tonalité Moyenne'},
+    markers=True,
+    line_shape='linear'
+)
+
+# Mettre en évidence le mois le plus positif et le plus négatif
+fig.add_scatter(
+    x=[most_positive_month['MonthName']],
+    y=[most_positive_month['AvgTone']],
+    mode='markers',
+    name='Mois le plus positif',
+    marker=dict(color='green', size=10)
+)
+fig.add_scatter(
+    x=[most_negative_month['MonthName']],
+    y=[most_negative_month['AvgTone']],
+    mode='markers',
+    name='Mois le plus négatif',
+    marker=dict(color='red', size=10)
+)
+
+fig.update_layout(xaxis_title='Mois', yaxis_title='Tonalité Moyenne')
+fig.show()
+```
+
+Le graphique ci-dessus illustre l'évolution de la tonalité moyenne (AvgTone) de l'actualité sur le Bénin tout au long de l'année. La tonalité est un indicateur de la positivité ou de la négativité des événements rapportés.
+
+-   **Mois le plus positif :** Le mois d'**Octobre** se distingue comme la période où la tonalité moyenne est la plus élevée ({-0.05} sur notre échelle), ce qui suggère que les nouvelles concernant le Bénin étaient majoritairement neutres à légèrement positives durant ce mois.
+
+-   **Mois le plus négatif :** À l'inverse, le mois de **Décembre** affiche la tonalité moyenne la plus basse ({-2.65}), indiquant une couverture médiatique plus critique ou centrée sur des événements perçus comme négatifs.
+
+Cette analyse révèle unegrande fluctuation de la perception médiatique du Bénin au cours de l'année. Alors qu'Octobre semble avoir été une période de nouvelles plus favorables, Décembre a été marqué par une couverture plus sombre. Il serait intéressant d'approfondir l'analyse pour comprendre les événements spécifiques ou les thématiques qui ont contribué à ces variations mensuelles, notamment en examinant les sujets dominants. \*Nous présenterons les résultats approfondis de cette analyse dans un dash board.\* Mais nous identifierons d'abord le sujet ayant le ton le plus positif et celui ayant le ton le plus negatif.
+
+### 2.1- Identification des sujets les plus positifs et les plus négatifs
+
+```{python}
+#| echo: false
+# Événements avec la tonalité la plus positive
+most_positive_event = df_filtre.loc[df_filtre['AvgTone'].idxmax()]
+
+# Événements avec la tonalité la plus négative
+most_negative_event = df_filtre.loc[df_filtre['AvgTone'].idxmin()]
+
+print("--- Événement avec la tonalité la plus POSITIVE ---")
+print(most_positive_event[['SQLDATE', 'Actor1Name', 'Actor2Name', 'EventCode', 'EventRootCode', 'QuadClass', 'AvgTone', 'GoldsteinScale', 'SOURCEURL']].to_string())
+
+print("\n--- Événement avec la tonalité la plus NÉGATIVE ---")
+print(most_negative_event[['SQLDATE', 'Actor1Name', 'Actor2Name', 'EventCode', 'EventRootCode', 'QuadClass', 'AvgTone', 'GoldsteinScale', 'SOURCEURL']].to_string())
+
+```
+
+Pour avoir une vue plus agrégée des sujets, nous allons maintenant examiner la tonalité moyenne par code d'événement, qui représente les grandes catégories de thématiques.
+
+```{python}
+#| echo: false
+#| # Calculer la tonalité moyenne par 'EventRootCode'
+tone_by_event_root_code = df_filtre.groupby('EventRootCode')['AvgTone'].mean().sort_values(ascending=False).reset_index()
+
+# Afficher les 10 EventRootCodes les plus positifs
+print("\n--- Top 10 des EventRootCodes avec la tonalité moyenne la plus POSITIVE ---")
+print(tone_by_event_root_code.head(10).to_string())
+
+# Afficher les 10 EventRootCodes les 10 plus négatifs
+print("\n--- Top 10 des EventRootCodes avec la tonalité moyenne la plus NÉGATIVE ---")
+print(tone_by_event_root_code.tail(10).to_string())
+
+# Créer un graphique pour visualiser la tonalité moyenne par EventRootCode (top 10 positif et négatif)
+fig_event_tone = px.bar(
+    pd.concat([tone_by_event_root_code.head(10), tone_by_event_root_code.tail(10)]),
+    x='EventRootCode',
+    y='AvgTone',
+    title='Tonalité Moyenne des Articles par Catégorie d\'Événement (EventRootCode)',
+    labels={'EventRootCode': 'Catégorie d\'Événement', 'AvgTone': 'Tonalité Moyenne'},
+    color='AvgTone',
+    color_continuous_scale='RdBu_r'
+)
+fig_event_tone.show()
+```
+
+Nous avons identifié les événements individuels avec la tonalité la plus extrême, ainsi que les catégories thématiques (EventRootCodes) qui présentent en moyenne les tonalités les plus positives et les plus négatives.
+
+Événements Individuels Extrêmes Événement le plus POSITIF (AvgTone = 19.48) : Un événement du 1er août 2025 impliquant un "CROWN PRINCE" et le "BENIN" avec un EventCode 42 (Make Public Statement) et EventRootCode 4 (Make Public Statement). L'URL provient de kuna.net.kw. Cela fait référence à une annonce publique ou une déclaration de soutien particulièrement positive.
+
+Événement le plus NÉGATIF (AvgTone = -18.52) : Un événement du 26 mai 2025 impliquant un "PROSECUTOR" et aucun deuxième acteur nommé, avec un EventCode 20 (Investigate) et EventRootCode 2 (Consult). L'URL est pressafrik.com. Bien que le EventRootCode soit "Consult", l'enquête menée par un procureur indique une situation négative ou conflictuelle.
+
+Les EventRootCodes les plus POSITIFS en moyenne sont
+
+5: ENGAGE IN MATERIAL COOPERATION (1.09) : Les actions concrètes de coopération sont perçues très positivement. 3: EXPRESS INTENT TO COOPERATE (0.15) : L'expression d'intentions coopératives a également une tonalité positive. Les EventRootCodes les plus NÉGATIFS en moyenne :
+
+17: USE CONVENTIONAL MILITARY FORCE (-5.86) : L'utilisation de la force militaire conventionnelle est la catégorie la plus négative. 18: USE WEAPONS OF MASS DESTRUCTION (-5.64) : De même, l'utilisation d'armes de destruction massive est extrêmement négative. 19: ESTABLISH DIPLOMATIC RELATIONS (-5.45): Étonnamment, ESTABLISH DIPLOMATIC RELATIONS apparaît avec une tonalité très négative. Cela peut indiquer que l'établissement de relations diplomatiques est souvent rapporté dans un contexte de résolution de conflits ou de tensions, ou que le processus lui-même est conflictuel, ce qui influence la tonalité des articles qui en parlent. 13: FIGHT (-4.05) : Les affrontements et les combats sont naturellement associés à une tonalité très négative. En somme, les résultats confirment une attente intuitive : les événements de coopération matérielle sont les plus positifs, tandis que les événements de conflit, en particulier ceux impliquant la force militaire, sont les plus négatifs. L'observation concernant ESTABLISH DIPLOMATIC RELATIONS en tant que catégorie négative est une nuance intéressante, suggérant que le contexte médiatique autour de ces événements peut être teinté de défis et de désaccords, plutôt que d'une simple célébration de la diplomatie.
+
+### Tableaux des événements les plus positifs et les plus négatifs
+
+```{python}
+#| echo: false
+# Triez le DataFrame par 'AvgTone' pour identifier les événements les plus positifs et négatifs
+df_sorted_by_tone = df_filtre.sort_values(by='AvgTone', ascending=False)
+
+# Sélectionnez les 5 événements les plus positifs
+top_5_positive_events = df_sorted_by_tone.head(5).copy()
+
+# Sélectionnez les 5 événements les plus négatifs
+top_5_negative_events = df_sorted_by_tone.tail(5).copy()
+
+# Définissez les colonnes à afficher
+columns_to_display = ['SQLDATE', 'SOURCEURL', 'AvgTone', 'Actor1Name', 'Actor2Name']
+
+print("--- Top 5 des événements les plus POSITIFS ---")
+display(top_5_positive_events[columns_to_display])
+
+
+print("\n--- Top 5 des événements les plus NÉGATIFS ---")
+display(top_5_negative_events[columns_to_display])
+```
+
+#### Événements Individuels Marquants
+
+Nous avons identifié les événements spécifiques qui ont affiché les tonalités les plus prononcées :
+
+-   **Le plus POSITIF** (Tonalité moyenne : 19.48) : Un événement daté du 1er août 2025, rapporté par kuna.net.kw, impliquant un "CROWN PRINCE" et le "BENIN". Cet événement, classé comme une déclaration publique (EventCode 42, EventRootCode 4), suppose une annonce officielle ou un soutien majeur ayant été perçu de manière extrêmement favorable.
+
+-   **Le plus NÉGATIF** (Tonalité moyenne : -18.52) : Un événement du 26 mai 2025, provenant de pressafrik.com, concernant un "PROSECUTOR" (Procureur) et classé comme une investigation (EventCode 20, EventRootCode 2). Bien que le code racine indique une consultation, la nature de l'acteur (procureur) et la tonalité très basse fait mention d'une affaire judiciaire grave ou une situation de conflit.
+
+### 3- A quel moment le Bénin a il le plus fait parlé de lui (buzzé) dans le monde
+
+```{python}
+#| echo: false
+import pandas as pd
+import re
+
+# Fonction pour extraire le domaine de base d'une URL
+def get_base_domain(url):
+    try:
+        # Supprimer le protocole (http/https) et le préfixe 'www.'
+        domain = re.sub(r'^(https?://)?(www\\.)?', '', url.lower())
+        # Garder uniquement la partie avant le premier '/' si elle existe
+        domain = domain.split('/')[0]
+        return domain
+    except:
+        return None
+
+# S'assurer que la colonne 'SQLDATE_DATE' est au format datetime et extraire le mois et le nom du mois
+# (Ces étapes ont été faites précédemment, mais on les répète ici pour s'assurer de la cohérence)
+if 'SQLDATE_DATE' not in df_filtre.columns:
+    df_filtre['SQLDATE_DATE'] = pd.to_datetime(df_filtre['SQLDATE'], format='%Y%m%d', errors='coerce')
+    # Supprimer les lignes où la conversion de date a échoué (NaT)
+    df_filtre.dropna(subset=['SQLDATE_DATE'], inplace=True)
+
+df_filtre['Month'] = df_filtre['SQLDATE_DATE'].dt.month
+df_filtre['MonthName'] = df_filtre['SQLDATE_DATE'].dt.strftime('%B')
+
+# Créer la colonne 'MediaSource' si elle n'existe pas
+if 'MediaSource' not in df_filtre.columns:
+    df_filtre['MediaSource'] = df_filtre['SOURCEURL'].apply(get_base_domain)
+
+# Agrégation des données par mois pour calculer les composants du score de buzz
+monthly_buzz_components = df_filtre.groupby(['Month', 'MonthName']).agg(
+    NumMentions=('SQLDATE', 'size'),  # Nombre total d'événements (mentions)
+    NumArticles=('SOURCEURL', 'nunique'),  # Nombre d'articles uniques
+    NumSources=('MediaSource', 'nunique')  # Nombre de sources uniques
+).reset_index()
+
+# Calculer le score de buzz en utilisant la formule fournie
+monthly_buzz_components['BuzzScore'] = (
+    0.5 * monthly_buzz_components['NumMentions'] +
+    0.3 * monthly_buzz_components['NumArticles'] +
+    0.2 * monthly_buzz_components['NumSources']
+)
+
+# Trier par mois (optionnel, pour l'affichage)
+monthly_buzz_components = monthly_buzz_components.sort_values('Month')
+
+# Fusionner df_filtre avec monthly_buzz_components pour ajouter le 'BuzzScore' à chaque ligne d'événement
+# Utiliser une copie du df_filtre pour éviter les SettingWithCopyWarning potentielles
+df_filtre = df_filtre.merge(
+    monthly_buzz_components[['Month', 'MonthName', 'BuzzScore']],
+    on=['Month', 'MonthName'],
+    how='left'
+)
+
+```
+
+```{python}
+#| echo: false
+import plotly.express as px
+
+# Identifier le mois où le Bénin a le plus buzzé
+most_buzzed_month_data = monthly_buzz_components.loc[monthly_buzz_components['BuzzScore'].idxmax()]
+
+print(f"Le Bénin a le plus buzzé en : {most_buzzed_month_data['MonthName']} avec un score de buzz de {most_buzzed_month_data['BuzzScore']:.2f}")
+print("\nScore de Buzz par mois :")
+print(monthly_buzz_components[['MonthName', 'BuzzScore']].to_string())
+
+# Créer un graphique pour visualiser le score de buzz par mois
+fig_buzz_score = px.bar(
+    monthly_buzz_components,
+    x='MonthName',
+    y='BuzzScore',
+    title='Score de Buzz de l\'Actualité sur le Bénin par Mois',
+    labels={'MonthName': 'Mois', 'BuzzScore': 'Score de Buzz'},
+    color='BuzzScore',
+    color_continuous_scale='Plasma'
+)
+
+# Mettre en évidence le mois le plus buzzé
+fig_buzz_score.add_scatter(
+    x=[most_buzzed_month_data['MonthName']],
+    y=[most_buzzed_month_data['BuzzScore']],
+    mode='markers',
+    name='Mois le plus buzzé',
+    marker=dict(color='red', size=12, symbol='star')
+)
+
+fig_buzz_score.update_layout(xaxis_title='Mois', yaxis_title='Score de Buzz')
+fig_buzz_score.show()
+```
+
+L'actualité béninoise a connu un grand buzz en décembre. Nous avons analysé le « Score de Buzz » pour identifier les moments et les sujets qui ont généré le plus d'attention médiatique concernant le Bénin.
+
+Période de plus grand buzz Le Bénin a le plus « buzzé » durant le mois de Décembre, avec un score de buzz de 2659.60. Cela indique que ce mois a concentré le plus grand nombre de mentions, d'articles uniques et de sources médiatiques couvrant le Bénin, suggérant une période d'activité ou d'événements intenses.
+
+# 4- Sujets qui ont eu le plus grand buzz au cours de l'année
+
+### Visualisation des Tendances Mensuelles : Buzz et Tonalité
+
+```{python}
+#| echo: false
+import pandas as pd
+import re
+import plotly.graph_objects as go
+
+
+# Ensure 'SQLDATE_DATE' is in datetime format and 'Month'/'MonthName' exist
+# Use pd.api.types.is_datetime64_any_dtype to robustly check date type, or convert if not present/incorrect type
+if 'SQLDATE' not in df_filtre.columns or not pd.api.types.is_datetime64_any_dtype(df_filtre['SQLDATE_DATE']):
+    df_filtre['SQLDATE'] = pd.to_datetime(df_filtre['SQLDATE'], format='%Y%m%d', errors='coerce')
+    df_filtre.dropna(subset=['SQLDATE'], inplace=True)
+
+# Ensure Month and MonthName columns are present in df_filtre
+if 'Month' not in df_filtre.columns or 'MonthName' not in df_filtre.columns:
+    df_filtre['Month'] = df_filtre['SQLDATE'].dt.month
+    df_filtre['MonthName'] = df_filtre['SQLDATE'].dt.strftime('%B')
+
+# Function to extract the base domain from a URL
+def get_base_domain(url):
+    try:
+        # Supprimer le protocole (http/https) et le préfixe 'www.'
+        domain = re.sub(r'^(https?://)?(www\\.)?', '', url.lower())
+        # Garder uniquement la partie avant le premier '/' si elle existe
+        domain = domain.split('/')[0]
+        return domain
+    except:
+        return None
+
+# Create the 'MediaSource' column if it doesn't exist
+if 'MediaSource' not in df_filtre.columns:
+    df_filtre['MediaSource'] = df_filtre['SOURCEURL'].apply(get_base_domain)
+
+# Agrégation des données par mois pour calculer les composants du score de buzz
+monthly_buzz_components = df_filtre.groupby(['Month', 'MonthName']).agg(
+    NumMentions=('SQLDATE', 'size'),  # Nombre total d'événements (mentions)
+    NumArticles=('SOURCEURL', 'nunique'),    # Nombre d'articles uniques
+    NumSources=('MediaSource', 'nunique')   # Nombre de sources uniques
+).reset_index()
+
+monthly_buzz_components['BuzzScore'] = (
+    0.5 * monthly_buzz_components['NumMentions'] +
+    0.3 * monthly_buzz_components['NumArticles'] +
+    0.2 * monthly_buzz_components['NumSources']
+)
+
+# Ensure months are in chronological order for plotting
+# Need to use the numeric Month for sorting then set categorical for display
+monthly_buzz_components['MonthName'] = pd.Categorical(monthly_buzz_components['MonthName'],
+                                                  categories=['January', 'February', 'March', 'April', 'May', 'June',
+                                                              'July', 'August', 'September', 'October', 'November', 'December'],
+                                                  ordered=True)
+monthly_buzz_components = monthly_buzz_components.sort_values('MonthName') # Sort by the categorical MonthName
+
+# Identify the most buzzed month
+most_buzzed_month_data = monthly_buzz_components.loc[monthly_buzz_components['BuzzScore'].idxmax()]
+
+
+# Graphique pour le Score de Buzz
+fig_buzz_area = go.Figure()
+
+fig_buzz_area.add_trace(go.Scatter(
+    x=monthly_buzz_components['MonthName'],
+    y=monthly_buzz_components['BuzzScore'],
+    mode='lines+markers',
+    fill='tozeroy', # Fill the area below the line
+    name='Score de Buzz',
+    line=dict(color='blue', width=2),
+    marker=dict(color='blue', size=8)
+))
+
+# Mettre en évidence le mois le plus buzzé
+fig_buzz_area.add_trace(go.Scatter(
+    x=[most_buzzed_month_data['MonthName']],
+    y=[most_buzzed_month_data['BuzzScore']],
+    mode='markers',
+    name='Mois le plus buzzé',
+    marker=dict(color='red', size=12, symbol='star', line=dict(color='black', width=1))
+))
+
+fig_buzz_area.update_layout(
+    title='Évolution du Score de Buzz par Mois (Area Chart)',
+    xaxis_title='Mois',
+    yaxis_title='Score de Buzz',
+    hovermode='x unified'
+)
+
+fig_buzz_area.show()
+```
+
+```{python}
+#| echo: false
+import plotly.graph_objects as go
+
+# Graphique pour la Tonalité Moyenne
+fig_tone_area = go.Figure()
+
+fig_tone_area.add_trace(go.Scatter(
+    x=tone_by_month['MonthName'],
+    y=tone_by_month['AvgTone'],
+    mode='lines+markers',
+    fill='tozeroy', # Fill the area below the line
+    name='Tonalité Moyenne',
+    line=dict(color='green', width=2),
+    marker=dict(color='green', size=8)
+))
+
+# Mettre en évidence le mois le plus positif
+fig_tone_area.add_trace(go.Scatter(
+    x=[most_positive_month['MonthName']],
+    y=[most_positive_month['AvgTone']],
+    mode='markers',
+    name='Mois le plus positif',
+    marker=dict(color='blue', size=12, symbol='circle', line=dict(color='black', width=1))
+))
+
+# Mettre en évidence le mois le plus négatif
+fig_tone_area.add_trace(go.Scatter(
+    x=[most_negative_month['MonthName']],
+    y=[most_negative_month['AvgTone']],
+    mode='markers',
+    name='Mois le plus négatif',
+    marker=dict(color='red', size=12, symbol='x', line=dict(color='black', width=1))
+))
+
+fig_tone_area.update_layout(
+    title='Évolution de la Tonalité Moyenne par Mois (Area Chart)',
+    xaxis_title='Mois',
+    yaxis_title='Tonalité Moyenne',
+    hovermode='x unified'
+)
+
+fig_tone_area.show()
+```
+
+```{python}
+#| echo: false
+import pandas as pd
+import plotly.express as px
+
+# S'assurer que la colonne 'MediaSource' existe (au cas où le kernel aurait été redémarré)
+# Cette étape a déjà été faite dans un cell précédent, mais on la répète pour s'assurer
+if 'MediaSource' not in df_filtre.columns:
+    import re
+    def get_base_domain(url):
+        try:
+            domain = re.sub(r'^(https?://)?(www\\.)?', '', url.lower())
+            domain = domain.split('/')[0]
+            return domain
+        except:
+            return None
+    df_filtre['MediaSource'] = df_filtre['SOURCEURL'].apply(get_base_domain)
+
+# Agrégation des données par EventRootCode pour calculer les composants du score de buzz par sujet
+subject_buzz_components = df_filtre.groupby('EventRootCode').agg(
+    NumMentions=('GLOBALEVENTID', 'size'),  # Nombre total d'événements (mentions)
+    NumArticles=('SOURCEURL', 'nunique'),    # Nombre d'articles uniques
+    NumSources=('MediaSource', 'nunique')   # Nombre de sources uniques
+).reset_index()
+
+# Calculer le score de buzz pour chaque sujet
+subject_buzz_components['BuzzScore'] = (
+    0.5 * subject_buzz_components['NumMentions'] +
+    0.3 * subject_buzz_components['NumArticles'] +
+    0.2 * subject_buzz_components['NumSources']
+)
+
+# Trier par score de buzz décroissant
+top_10_buzzed_subjects = subject_buzz_components.sort_values(by='BuzzScore', ascending=False).head(10)
+
+# Mapping des valeurs EventRootCode vers des descriptions plus lisibles
+event_root_code_map = {
+    1: 'MAKE PUBLIC STATEMENT',
+    2: 'CONSULT',
+    3: 'EXPRESS INTENT TO COOPERATE',
+    4: 'MAKE PROMISE',
+    5: 'ENGAGE IN MATERIAL COOPERATION',
+    6: 'PROVIDE AID',
+    7: 'YIELD',
+    8: 'ACCUSE',
+    9: 'PROTEST',
+    10: 'EXHIBIT RELIGIOUS DIFFERENCE',
+    11: 'REJECT',
+    12: 'THREATEN',
+    13: 'FIGHT',
+    14: 'COERCE',
+    15: 'ASSAULT',
+    16: 'ENGAGE IN UNCONVENTIONAL VIOLENCE',
+    17: 'USE CONVENTIONAL MILITARY FORCE',
+    18: 'USE WEAPONS OF MASS DESTRUCTION',
+    19: 'ESTABLISH DIPLOMATIC RELATIONS',
+    20: 'DEMAND' # Not in the original list, but good to include if it appears in data
+}
+
+top_10_buzzed_subjects['EventRootCodeDescription'] = top_10_buzzed_subjects['EventRootCode'].map(event_root_code_map)
+
+print("Top 10 des sujets (EventRootCode) avec le plus grand buzz :")
+print(top_10_buzzed_subjects[['EventRootCode', 'EventRootCodeDescription', 'BuzzScore']].to_string(index=False))
+
+# Visualisation des 10 sujets les plus buzzés
+fig_top_buzz_subjects = px.bar(
+    top_10_buzzed_subjects,
+    x='EventRootCodeDescription',
+    y='BuzzScore',
+    title='Top 10 des Sujets avec le Plus Grand Buzz',
+    labels={'EventRootCodeDescription': 'Catégorie d\'Événement', 'BuzzScore': 'Score de Buzz'},
+    color='BuzzScore',
+    color_continuous_scale='Viridis'
+)
+fig_top_buzz_subjects.update_layout(xaxis_tickangle=-45)
+fig_top_buzz_subjects.show()
+```
+
+Le sujet qui a généré le plus grand buzz tout au long de l'année est "MAKE PROMISE" (Faire une Promesse), avec un score de buzz impressionnant de 3571.0. Ce résultat est particulièrement intéressant et pourrait indiquer que les annonces, les engagements ou les plans pour l'avenir concernant le Bénin attirent une attention médiatique considérable. Cela peut être lié à des promesses politiques, économiques ou de développement qui captivent l'intérêt des médias et du public. Il est suivi par "MAKE PUBLIC STATEMENT" (Faire une Déclaration Publique) et "ENGAGE IN MATERIAL COOPERATION" (S'Engager dans une Coopération Matérielle), soulignant l'importance des communications officielles et des actions concrètes dans la génération de buzz médiatique.
+
+# 5 - Analyse des 4 grandes catégories d'événements en fonction du temps
+
+```{python}
+#| echo: false
+import plotly.express as px
+
+# S'assurer que les colonnes de date existent et sont au bon format, et que df_filtre a les colonnes nécessaires
+# Ces étapes sont reprises pour robustesse, au cas où le kernel aurait été redémarré ou que des colonnes auraient été modifiées.
+if 'SQLDATE_DATE' not in df_filtre.columns or not pd.api.types.is_datetime64_any_dtype(df_filtre['SQLDATE_DATE']):
+    df_filtre['SQLDATE_DATE'] = pd.to_datetime(df_filtre['SQLDATE'], format='%Y%m%d', errors='coerce')
+    df_filtre.dropna(subset=['SQLDATE_DATE'], inplace=True)
+
+if 'Month' not in df_filtre.columns or 'MonthName' not in df_filtre.columns:
+    df_filtre['Month'] = df_filtre['SQLDATE_DATE'].dt.month
+    df_filtre['MonthName'] = df_filtre['SQLDATE_DATE'].dt.strftime('%B')
+
+# Définir un mapping pour les valeurs numériques de 'QuadClass' vers des descriptions en français
+quadclass_map = {
+    1: 'Coopération Verbale',
+    2: 'Coopération Matérielle',
+    3: 'Conflit Verbal',
+    4: 'Conflit Matériel'
+}
+
+# Créer la colonne 'QuadClassDescription' si elle n'existe pas ou la mettre à jour
+if 'QuadClassDescription' not in df_filtre.columns:
+    df_filtre['QuadClassDescription'] = df_filtre['QuadClass'].map(quadclass_map)
+
+# Grouper le DataFrame par 'Month', 'MonthName' et 'QuadClassDescription', puis compter les occurrences
+quadclass_monthly_counts = df_filtre.groupby(['Month', 'MonthName', 'QuadClassDescription']).size().reset_index(name='Count')
+
+# Calculer le total des événements par mois
+monthly_total_counts = quadclass_monthly_counts.groupby(['Month', 'MonthName'])['Count'].transform('sum')
+
+# Calculer les proportions mensuelles
+quadclass_monthly_proportions = quadclass_monthly_counts.copy() # Faire une copie pour éviter les problèmes de SettingWithCopyWarning
+quadclass_monthly_proportions['Proportion'] = (100 * quadclass_monthly_proportions['Count'] / monthly_total_counts)
+
+# Définir l'ordre des mois pour un affichage chronologique et traduire en français
+month_order_english = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+month_order_french = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+
+# Créer un mapping pour traduire les noms de mois
+month_translation_map = dict(zip(month_order_english, month_order_french))
+quadclass_monthly_proportions['MonthName_FR'] = quadclass_monthly_proportions['MonthName'].map(month_translation_map)
+
+# Convertir 'MonthName_FR' en catégorie pour un tri correct
+quadclass_monthly_proportions['MonthName_FR'] = pd.Categorical(quadclass_monthly_proportions['MonthName_FR'], categories=month_order_french, ordered=True)
+quadclass_monthly_proportions = quadclass_monthly_proportions.sort_values(['MonthName_FR', 'QuadClassDescription'])
+
+# Créer le graphique en aires empilées à 100%
+fig_quadclass_stacked_area = px.area(
+    quadclass_monthly_proportions,
+    x='MonthName_FR',
+    y='Proportion',
+    color='QuadClassDescription',
+    title='Distribution Mensuelle des Types d\'Événements (QuadClass) (100% Empilé)',
+    labels={'MonthName_FR': 'Mois', 'Proportion': 'Proportion (%)', 'QuadClassDescription': 'Type d\'Événement'},
+    groupnorm='percent', # Cela assure que les aires sont empilées à 100%
+    category_orders={'MonthName_FR': month_order_french},
+    color_discrete_map={
+        'Coopération Verbale': 'lightblue',
+        'Coopération Matérielle': 'blue',
+        'Conflit Verbal': 'orange',
+        'Conflit Matériel': 'red'
+    }
+)
+
+fig_quadclass_stacked_area.update_layout(xaxis_title='Mois', yaxis_title='Proportion (%)')
+fig_quadclass_stacked_area.show()
+```
+
+L'actualité sur le Bénin est principalement couverte par des médias nigérians et ouest-africains, avec une forte prédominance des discussions et déclarations (coopération verbale). Bien que la coopération concrète soit perçue positivement, la tonalité générale des articles est plutôt prudente, voire légèrement négative, notamment lorsque des sujets sensibles ou conflictuels sont abordés. Le mois de Décembre se distingue par une intensité médiatique ('buzz') très élevée, mais paradoxalement, c'est aussi le mois où la tonalité moyenne est la plus négative, suggérant une couverture axée sur des défis ou des événements controversés. Les 'promesses' et les 'déclarations publiques' sont les sujets qui génèrent le plus de buzz. Les actions militaires sont les plus négatives avec affiche la tonalité moyenne la plus basse de toutes les catégories, soit -5.86. C'est un indicateur très fort que les articles traitant de ce sujet sont, en moyenne, très négatifs. l'établissement de relations diplomatiques est souvent rapporté dans un contexte de résolution de tensions. Mais dans le cas du Bénin, elle a également une tonalité moyenne très négative, à -5.45. suggère que les médias rapportent souvent l'établissement de ces relations non pas comme une simple célébration, mais plutôt comme un processus complexe, parfois en réponse à des conflits existants, ou dans un contexte de résolution de tensions où les défis et les désaccords sont mis en avant.
